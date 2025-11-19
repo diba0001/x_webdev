@@ -1,0 +1,237 @@
+{
+    "login": {
+        "english": "Login",
+        "danish": "Log ind",
+        "spanish": "Entrar"
+    },
+    "signup": {
+        "english": "Signup",
+        "danish": "Opret konto",
+        "spanish": "Inscribirse"
+    },
+    "dont_have_an_account": {
+        "english": "Don't have an account",
+        "danish": "Har du ikke en konto",
+        "spanish": "No tienes cuenta"
+    },
+    "have_an_account": {
+        "english": "Have an account",
+        "danish": "Har du en konto",
+        "spanish": "Tienes una cuenta"
+    },
+    "email": {
+        "english": "Email",
+        "danish": "Email",
+        "spanish": "Correo electrónico"
+    },
+    "password": {
+        "english": "Password",
+        "danish": "Adgangskode",
+        "spanish": "Clave"
+    },
+    "username": {
+        "english": "Username",
+        "danish": "Brugernavn",
+        "spanish": "Nombre de usuario"
+    },
+    "first_name": {
+        "english": "First name",
+        "danish": "Fornavn",
+        "spanish": "Nombre"
+    },
+    "last_name": {
+        "english": "Last name",
+        "danish": "Efternavn",
+        "spanish": "Efternavn"
+    },
+    "to": {
+        "english": "to",
+        "danish": "til",
+        "spanish": "a"
+    },
+    "characters": {
+        "english": "characters",
+        "danish": "tegn",
+        "spanish": "personajes"
+    },
+    "": {
+        "english": "",
+        "danish": "",
+        "spanish": ""
+    },
+    "invalid_email": {
+        "english": "Invalid email",
+        "danish": "Ugyldig email",
+        "spanish": "Correo electrónico inválido"
+    },
+    "invalid_password": {
+        "english": "Invalid password",
+        "danish": "Ugyldig adgangskode",
+        "spanish": "Clave inválida"
+    },
+    "invalid_credentials": {
+        "english": "Invalid credentials",
+        "danish": "Ugyldige loginoplysninger",
+        "spanish": "Información incorrecta"
+    },
+    "user_not_verified": {
+        "english": "User not verified. Please check your email",
+        "danish": "Bruger ikke verificeret. Tjek venligst din e-mail",
+        "spanish": "Usuario no verificado. Por favor, chequéa tu email"
+    },
+    "user_not_found": {
+        "english": "User not found",
+        "danish": "Bruger ikke fundet",
+        "spanish": "Usuario no encontrado"
+    },
+    "email_already_registered": {
+        "english": "Email already registered",
+        "danish": "Email allerede registreret",
+        "spanish": "Correo electrónico ya registrado"
+    },
+    "username_already_registered": {
+        "english": "Username already registered",
+        "danish": "Brugernavn allerede registreret",
+        "spanish": "Nombre de usuario ya registrado"
+    },
+    "system_under_maintenance": {
+        "english": "System under maintenance",
+        "danish": "Systemet er under vedligeholdelse",
+        "spanish": "Sistema en mantenimiento"
+    },
+    "home": {
+        "english": "Home",
+        "danish": "Hjem",
+        "spanish": "Casa"
+    },
+    "explore": {
+        "english": "Explore",
+        "danish": "Udforsk",
+        "spanish": "Explorar"
+    },
+    "notifications": {
+        "english": "Notifications",
+        "danish": "Notifikationer",
+        "spanish": "Notificaciones"
+    },
+    "messages": {
+        "english": "Messages",
+        "danish": "Beskeder",
+        "spanish": "Mensajes"
+    },
+    "bookmarks": {
+        "english": "Bookmarks",
+        "danish": "Bogmærker",
+        "spanish": "Marcadores"
+    },
+    "jobs": {
+        "english": "Jobs",
+        "danish": "Job",
+        "spanish": "Trabajo"
+    },
+    "communities": {
+        "english": "Communities",
+        "danish": "Fællesskaber",
+        "spanish": "Comunidades"
+    },
+    "profile": {
+        "english": "Profile",
+        "danish": "Profil",
+        "spanish": "Perfil"
+    },
+    "premium": {
+        "english": "Premium",
+        "danish": "Præmium",
+        "spanish": "Premium"
+    },
+    "more": {
+        "english": "More",
+        "danish": "Mere",
+        "spanish": "Más"
+    },
+    "who_to_follow": {
+        "english": "Who to follow",
+        "danish": "Personer du kan følge",
+        "spanish": "Personas que puedes seguir"
+    },
+    "post": {
+        "english": "Post",
+        "danish": "Del",
+        "spanish": "Compartir"
+    },
+    "search": {
+        "english": "Search",
+        "danish": "Søg",
+        "spanish": "Buscar"
+    },
+    "what_is_happening_now": {
+        "english": "What is happening now",
+        "danish": "Nyheder",
+        "spanish": "Qué está pasando ahora"
+    },
+    "follow": {
+        "english": "Follow",
+        "danish": "Følg",
+        "spanish": "Seguir"
+    },
+    "show_more": {
+        "english": "Show more",
+        "danish": "Vis mere",
+        "spanish": "Mostrar más"
+    },
+    "more_news": {
+        "english": "More news",
+        "danish": "Flere nyheder",
+        "spanish": "Más noticias"
+    },
+    "update_profile": {
+        "english": "Update profile",
+        "danish": "Opdater profil",
+        "spanish": "Actualizar perfil"
+    },
+    "logout": {
+        "english": "Log out",
+        "danish": "Log ud",
+        "spanish": "Cerrar sesión"
+    },
+    "updating_profile": {
+        "english": "Updating profile...",
+        "danish": "Opdaterer profil...",
+        "spanish": "Actualizando perfil..."
+    },
+    "welcome_to_x": {
+        "english": "Welcome to X",
+        "danish": "Velkommen til X",
+        "spanish": "Bienvenido a X"
+    },
+    "you_need_to_verify_your_account": {
+        "english": "You need to verify your account",
+        "danish": "Du skal verificere din konto",
+        "spanish": "Necesitas verificar tu cuenta"
+    },
+    "click_here_to_get_verified": {
+        "english": "Click here to get verified",
+        "danish": "Klik her for at verificere din konto",
+        "spanish": "Haz clic aquí para verificarte"
+    },
+    "fresh_news": {
+        "english": "Fresh news",
+        "danish": "Friske nyheder",
+        "spanish": "Noticias recientes"
+    },
+    "log_in_to_x": {
+        "english": "Log in to X",
+        "danish": "Log på X",
+        "spanish": "Inicia sesión en X"
+    },
+    "happening_now": {
+        "english": "Happening now",
+        "danish": "Det sker, nu",
+        "spanish": "Ocurriendo ahora"
+    },
+    "join_today": {
+        "english": "Join today",
+        "danish": "Tilmeld dig i dag",
+        "spanish": "Únete hoy"
+    }
+}
