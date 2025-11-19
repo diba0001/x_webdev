@@ -335,20 +335,23 @@ def api_create_post():
                     post_image_path = unique_filename
         
         db, cursor = x.db()
-        q = "INSERT INTO posts VALUES(%s, %s, %s, %s, %s)"
+        q = "INSERT INTO posts VALUES(%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)"
         cursor.execute(q, (post_pk, user_pk, post, 0, post_image_path))
         db.commit()
         toast_ok = render_template("___toast_ok.html", message="The world is reading your post !")
         tweet = {
+            "post_pk": post_pk,
+            "post_user_fk": user_pk,
             "user_first_name": user["user_first_name"],
             "user_last_name": user["user_last_name"],
             "user_username": user["user_username"],
             "user_avatar_path": user["user_avatar_path"],
             "post_message": post,
             "post_image_path": post_image_path,
+            "post_created_at": None
         }
         html_post_container = render_template("___post_container.html")
-        html_post = render_template("_tweet.html", tweet=tweet)
+        html_post = render_template("_tweet.html", tweet=tweet, user=user)
         return f"""
             <browser mix-bottom="#toast">{toast_ok}</browser>
             <browser mix-top="#posts">{html_post}</browser>
@@ -377,17 +380,136 @@ def api_create_post():
         if "db" in locals(): db.close()
 
 ##############################
-@app.route("/api-update-post", methods=["POST"])
-def api_update_post(): 
+@app.route("/api-delete-post/<post_pk>", methods=["DELETE"])
+def api_delete_post(post_pk):
     try:
-        pass
+        user = session.get("user", "")
+        if not user: 
+            toast_error = render_template("___toast_error.html", message="You must be logged in")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 401
+        
+        # Validate post_pk
+        post_pk = x.validate_uuid4_without_dashes(post_pk)
+        
+        db, cursor = x.db()
+        
+        # Check if post belongs to user
+        q = "SELECT post_image_path FROM posts WHERE post_pk = %s AND post_user_fk = %s"
+        cursor.execute(q, (post_pk, user["user_pk"]))
+        post = cursor.fetchone()
+        
+        if not post:
+            raise Exception("Post not found or you don't have permission", 403)
+        
+        # Delete image file if exists
+        if post["post_image_path"]:
+            image_path = os.path.join('static/images', post["post_image_path"])
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        
+        # Delete post from database
+        q = "DELETE FROM posts WHERE post_pk = %s"
+        cursor.execute(q, (post_pk,))
+        db.commit()
+        
+        toast_ok = render_template("___toast_ok.html", message="Post deleted successfully!")
+        return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-remove="#post_{post_pk}"></browser>
+        """
+        
     except Exception as ex:
-        pass
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        
+        toast_error = render_template("___toast_error.html", message="Failed to delete post")
+        return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 500
+        
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
 
+##############################
+@app.route("/api-update-post/<post_pk>", methods=["POST"])
+def api_update_post(post_pk): 
+    try:
+        user = session.get("user", "")
+        if not user: 
+            toast_error = render_template("___toast_error.html", message="You must be logged in")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 401
+        
+        # Validate
+        post_pk = x.validate_uuid4_without_dashes(post_pk)
+        post_message = x.validate_post(request.form.get("post", ""))
+        remove_image = request.form.get("remove_image", "0") == "1"
+        
+        db, cursor = x.db()
+        
+        # Check if post belongs to user
+        q = "SELECT * FROM posts WHERE post_pk = %s AND post_user_fk = %s"
+        cursor.execute(q, (post_pk, user["user_pk"]))
+        existing_post = cursor.fetchone()
+        
+        if not existing_post:
+            raise Exception("Post not found or you don't have permission", 403)
+        
+        new_image_path = existing_post["post_image_path"]
+        
+        # Handle image removal
+        if remove_image and existing_post["post_image_path"]:
+            image_path = os.path.join('static/images', existing_post["post_image_path"])
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            new_image_path = ""
+        
+        # Handle new file upload
+        if 'post_file' in request.files:
+            file = request.files['post_file']
+            if file and file.filename:
+                allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+                
+                if file_ext in allowed_extensions:
+                    # Delete old image if exists
+                    if existing_post["post_image_path"]:
+                        old_image_path = os.path.join('static/images', existing_post["post_image_path"])
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
+                    
+                    # Save new image
+                    original_filename = secure_filename(file.filename)
+                    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+                    file_path = os.path.join('static/images', unique_filename)
+                    file.save(file_path)
+                    new_image_path = unique_filename
+        
+        # Update post in database
+        q = "UPDATE posts SET post_message = %s, post_image_path = %s WHERE post_pk = %s"
+        cursor.execute(q, (post_message, new_image_path, post_pk))
+        db.commit()
+        
+        toast_ok = render_template("___toast_ok.html", message="Post updated successfully!")
+        return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-redirect="/home"></browser>
+        """
+        
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        
+        # User errors
+        if "x-error post" in str(ex):
+            toast_error = render_template("___toast_error.html", message=f"Post - {x.POST_MIN_LEN} to {x.POST_MAX_LEN} characters")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>"""
+        
+        toast_error = render_template("___toast_error.html", message="Failed to update post")
+        return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 500
+        
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 ##############################
 @app.route("/api-update-profile", methods=["POST"])
