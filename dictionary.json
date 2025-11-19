@@ -99,6 +99,11 @@
         "danish": "Systemet er under vedligeholdelse",
         "spanish": "Sistema en mantenimiento"
     },
+    "profile_updated_successfully": {
+        "english": "Profile updated successfully",
+        "danish": "Profil opdateret med succes",
+        "spanish": "Perfil actualizado con éxito"
+    },
     "home": {
         "english": "Home",
         "danish": "Hjem",
@@ -198,6 +203,11 @@
         "english": "Updating profile...",
         "danish": "Opdaterer profil...",
         "spanish": "Actualizando perfil..."
+    },
+    "loading": {
+        "english": "Loading...",
+        "danish": "Loader...",
+        "spanish": "Cargando..."
     },
     "welcome_to_x": {
         "english": "Welcome to X",

@@ -383,7 +383,7 @@ def api_update_profile():
 
         # Response to the browser
       
-        toast_ok = render_template("___toast_ok.html", message=f"{dictionary.profile_updated_successfully[lan]}")
+        toast_ok = render_template("___toast_ok.html", message=f"{x.lans('profile_updated_successfully')}")
         return f"""
             <browser mix-bottom="#toast">{toast_ok}</browser>
             <browser mix-update="#profile_tag .name">{user_first_name}</browser>
@@ -399,14 +399,14 @@ def api_update_profile():
         
         # Database errors
         if "Duplicate entry" and user_email in str(ex): 
-            toast_error = render_template("___toast_error.html", message=f"{dictionary.email_already_registered[lan]}")
+            toast_error = render_template("___toast_error.html", message=f"{x.lans('email_already_registered')}")
             return f"""<mixhtml mix-update="#toast">{ toast_error }</mixhtml>""", 400
         if "Duplicate entry" and user_username in str(ex): 
-            toast_error = render_template("___toast_error.html", message=f"{dictionary.username_already_registered[lan]}")
+            toast_error = render_template("___toast_error.html", message=f"{x.lans('username_already_registered')}")
             return f"""<mixhtml mix-update="#toast">{ toast_error }</mixhtml>""", 400
         
         # System or developer error
-        toast_error = render_template("___toast_error.html", message=f"{dictionary.system_under_maintenance[lan]}")
+        toast_error = render_template("___toast_error.html", message=f"{x.lans('system_under_maintenance')}")
         return f"""<mixhtml mix-bottom="#toast">{ toast_error }</mixhtml>""", 500
 
     finally:
