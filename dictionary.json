@@ -206,8 +206,13 @@
     },
     "loading": {
         "english": "Loading...",
-        "danish": "Loader...",
+        "danish": "Indlæser...",
         "spanish": "Cargando..."
+    },
+    "log_in_to_x": {
+        "english": "Log in to X",
+        "danish": "Log på X",
+        "spanish": "Inicia sesión en X"
     },
     "welcome_to_x": {
         "english": "Welcome to X",
@@ -228,11 +233,6 @@
         "english": "Fresh news",
         "danish": "Friske nyheder",
         "spanish": "Noticias recientes"
-    },
-    "log_in_to_x": {
-        "english": "Log in to X",
-        "danish": "Log på X",
-        "spanish": "Inicia sesión en X"
     },
     "happening_now": {
         "english": "Happening now",
