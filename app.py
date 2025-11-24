@@ -138,7 +138,7 @@ def signup(lan = "english"):
 
             # send verification email
             email_verify_account = render_template("_email_verify_account.html", user_verification_key=user_verification_key)
-            ic(email_verify_account)
+            # ic(email_verify_account)
             x.send_email(user_email, "Verify your account", email_verify_account)
 
             return f"""<mixhtml mix-redirect="{ url_for('login') }"></mixhtml>""", 400
@@ -174,11 +174,28 @@ def home():
     try:
         user = session.get("user", "")
         if not user: return redirect(url_for("login"))
+        user_pk = user["user_pk"]
+        
         db, cursor = x.db()
-        q = "SELECT * FROM users JOIN posts ON user_pk = post_user_fk ORDER BY RAND() LIMIT 5"
-        cursor.execute(q)
+
+        # Fetch tweets, total likes, and current user's like status in one query
+        q = """
+            SELECT 
+                p.post_pk, p.post_message, p.post_image_path, p.post_total_likes, 
+                u.user_first_name, u.user_last_name, u.user_username, u.user_avatar_path,
+                (SELECT COUNT(*) FROM likes WHERE like_post_fk = p.post_pk AND like_user_fk = %s) AS is_liked_by_user
+            FROM posts p
+            JOIN users u ON u.user_pk = p.post_user_fk 
+            ORDER BY RAND() LIMIT 5
+        """
+        cursor.execute(q, (user_pk,))
         tweets = cursor.fetchall()
-        ic(tweets)
+        
+        # Convert the count to a boolean for template logic
+        for tweet in tweets:
+            tweet['is_liked_by_user'] = True if tweet['is_liked_by_user'] > 0 else False
+            
+        # ic(tweets)
 
         q = "SELECT * FROM trends ORDER BY RAND() LIMIT 3"
         cursor.execute(q)
@@ -186,7 +203,7 @@ def home():
         ic(trends)
 
         q = "SELECT * FROM users WHERE user_pk != %s ORDER BY RAND() LIMIT 3"
-        cursor.execute(q, (user["user_pk"],))
+        cursor.execute(q, (user_pk,))
         suggestions = cursor.fetchall()
         ic(suggestions)
 
@@ -250,7 +267,7 @@ def home_comp():
         q = "SELECT * FROM users JOIN posts ON user_pk = post_user_fk ORDER BY RAND() LIMIT 5"
         cursor.execute(q)
         tweets = cursor.fetchall()
-        ic(tweets)
+        # ic(tweets)
 
         html = render_template("_home_comp.html", tweets=tweets)
         return f"""<mixhtml mix-update="main">{ html }</mixhtml>"""
@@ -287,15 +304,117 @@ def profile():
 @x.no_cache
 def api_like_tweet():
     try:
-        button_unlike_tweet = render_template("___button_unlike_tweet.html")
+        user = session.get("user", "")
+        if not user: return "invalid user", 401
+        
+        post_pk = request.form.get("post_pk", "") 
+        if not post_pk: raise Exception("Missing post ID", 400)
+
+        user_pk = user["user_pk"]
+        
+        # Get the current Unix epoch timestamp in seconds
+        current_epoch = int(time.time()) 
+
+        db, cursor = x.db()
+
+        # 1. Insert a new like record with the composite key and timestamp
+        q_insert_like = "INSERT INTO likes (like_user_fk, like_post_fk, like_timestamp) VALUES(%s, %s, %s)"
+        cursor.execute(q_insert_like, (user_pk, post_pk, current_epoch))
+
+        # 2. Increment the post's like count
+        q_increment_post = "UPDATE posts SET post_total_likes = post_total_likes + 1 WHERE post_pk = %s"
+        cursor.execute(q_increment_post, (post_pk,))
+        
+        db.commit()
+        
+        # 3. Get the new total like count to display
+        q_get_count = "SELECT post_total_likes FROM posts WHERE post_pk = %s"
+        cursor.execute(q_get_count, (post_pk,))
+        new_count = cursor.fetchone()["post_total_likes"]
+
+        # Response to the browser: replace button and update count
+        button_unlike_tweet = render_template("___button_unlike_tweet.html", post_pk=post_pk, like_count=new_count)
+        
         return f"""
-            <mixhtml mix-replace="#button_1">
+            <mixhtml mix-replace="#button_container_{post_pk}">
                 {button_unlike_tweet}
             </mixhtml>
         """
     except Exception as ex:
         ic(ex)
-        return "error"
+        if "db" in locals(): db.rollback()
+        # If already liked (Duplicate entry), just return OK with the unlike button
+        if "Duplicate entry" in str(ex):
+            # This is a fallback in case the frontend logic fails to use the correct button
+            # We must fetch the current count to return the correct unlike button
+            try:
+                db, cursor = x.db()
+                q_get_count = "SELECT post_total_likes FROM posts WHERE post_pk = %s"
+                cursor.execute(q_get_count, (post_pk,))
+                current_count = cursor.fetchone()["post_total_likes"]
+                button_unlike_tweet = render_template("___button_unlike_tweet.html", post_pk=post_pk, like_count=current_count)
+                return f"""<mixhtml mix-replace="#button_container_{post_pk}">{button_unlike_tweet}</mixhtml>"""
+            except:
+                return "Already liked, failed to get count", 400
+        
+        # Other errors
+        if ex.args and len(ex.args) > 1 and ex.args[1] == 400:
+            return ex.args[0], 400
+
+        return "System error during like", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################
+@app.patch("/unlike-tweet")
+@x.no_cache
+def api_unlike_tweet():
+    try:
+        user = session.get("user", "")
+        if not user: return "invalid user", 401
+        
+        # Get post_pk from mix-data form
+        post_pk = request.form.get("post_pk", "") 
+        if not post_pk: raise Exception("Missing post ID", 400)
+
+        user_pk = user["user_pk"]
+
+        db, cursor = x.db()
+
+        # 1. Delete the like record
+        q_delete_like = "DELETE FROM likes WHERE like_user_fk = %s AND like_post_fk = %s"
+        cursor.execute(q_delete_like, (user_pk, post_pk))
+        
+        new_count = 0
+        if cursor.rowcount > 0:
+            # 2. Decrement the post's like count (using post_total_likes from x.sql)
+            q_decrement_post = "UPDATE posts SET post_total_likes = post_total_likes - 1 WHERE post_pk = %s AND post_total_likes > 0"
+            cursor.execute(q_decrement_post, (post_pk,))
+            db.commit()
+            
+            # 3. Get the new total like count to display
+            q_get_count = "SELECT post_total_likes FROM posts WHERE post_pk = %s"
+            cursor.execute(q_get_count, (post_pk,))
+            new_count = cursor.fetchone()["post_total_likes"]
+
+        # Response to the browser: replace button and update count
+        button_like_tweet = render_template("___button_like_tweet.html", post_pk=post_pk, like_count=new_count)
+        
+        return f"""
+            <mixhtml mix-replace="#button_container_{post_pk}">
+                {button_like_tweet}
+            </mixhtml>
+        """
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+
+        # User errors
+        if ex.args and len(ex.args) > 1 and ex.args[1] == 400:
+            return ex.args[0], 400
+
+        return "System error during unlike", 500
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
@@ -451,7 +570,7 @@ def api_search():
         search_for = request.form.get("search_for", "")
         if not search_for: return """empty search field""", 400
         part_of_query = f"%{search_for}%"
-        ic(search_for)
+        # ic(search_for)
         db, cursor = x.db()
         q = "SELECT * FROM users WHERE user_username LIKE %s"
         cursor.execute(q, (part_of_query,))
@@ -488,7 +607,7 @@ def get_data_from_sheet():
  
         # Read the CSV data
         reader = csv.DictReader(csv_file)
-        ic(reader)
+        # ic(reader)
         # Convert each row into the desired structure
         for row in reader:
             item = {

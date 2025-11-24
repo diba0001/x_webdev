@@ -20,7 +20,16 @@
         <div class="post-actions">
             <span class="action"><i class="fa-regular fa-comment"></i> 12</span>
             <span class="action"><i class="fa-solid fa-retweet"></i> 5</span>
-            {% include "___button_like_tweet.html" %}
+            
+            {% set post_pk = tweet.post_pk %}
+            {% set like_count = tweet.post_total_likes %}
+            
+            {% if tweet.is_liked_by_user %}
+                {% include "___button_unlike_tweet.html" with context %}
+            {% else %}
+                {% include "___button_like_tweet.html" with context %}
+            {% endif %}
+
             <span class="action"><i class="fa-solid fa-chart-simple"></i> 230</span>
             <span class="action"><i class="fa-solid fa-share"></i></span>
         </div>

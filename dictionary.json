@@ -243,5 +243,10 @@
         "english": "Join today",
         "danish": "Tilmeld dig i dag",
         "spanish": "Únete hoy"
+    },
+    "min_ago": {
+        "english": "min ago",
+        "danish": "min siden",
+        "spanish": "hace min"
     }
 }
