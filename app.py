@@ -70,6 +70,9 @@ def login(lan = "english"):
             user = cursor.fetchone()
             if not user: raise Exception(x.lans("user_not_found"), 400)
 
+            if user["user_deleted_at"] != 0:
+                 raise Exception(x.lans("user_not_found"), 400)
+
             if not check_password_hash(user["user_password"], user_password):
                 raise Exception(x.lans("invalid_credentials"), 400)
 
@@ -365,7 +368,6 @@ def api_update_post():
 def api_update_profile():
 
     try:
-
         user = session.get("user", "")
         lan = session["user"]["user_language"]
         if not user: return "invalid user"
@@ -413,6 +415,30 @@ def api_update_profile():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+##############################
+@app.route("/api-delete-profile", methods=["GET", "PUT"])
+def api_delete_profile():
+    try:
+        user = session.get("user", "")
+        if not user: return "invalid user"
+        user_pk = user.get("user_pk")
+
+        db, cursor = x.db()
+        q = "UPDATE users SET user_deleted_at = %s WHere user_pk = %s"
+        cursor.execute(q, (int(time.time()), user_pk))
+        db.commit()
+        
+        session.clear()
+        return redirect(url_for("login"))
+
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        return "System under maintenance", 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 # ##############################
 # @app.post("/api-search")
