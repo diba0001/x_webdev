@@ -271,6 +271,11 @@ p{
               color: rgb(29, 155, 240);
             }
           }
+          span.action {
+            &:hover {
+                background-color: transparent;
+            }
+          }
         }
       }
     }
