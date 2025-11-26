@@ -7,5 +7,13 @@
         </p>
     
     </div>
-    <button class="px-4 py-1 text-c-white bg-c-black rounded-lg">Follow</button>
+    {% if suggestion.is_followed_by_user %}
+        {% with user_pk=suggestion.user_pk %}
+            {% include "___button_unfollow.html" %}
+        {% endwith %}
+    {% else %}
+        {% with user_pk=suggestion.user_pk %}
+            {% include "___button_follow.html" %}
+        {% endwith %}
+    {% endif %}
 </div>

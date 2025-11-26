@@ -159,6 +159,11 @@
         "danish": "Personer du kan følge",
         "spanish": "Personas que puedes seguir"
     },
+    "following": {
+        "english": "Following",
+        "danish": "Personer du følger",
+        "spanish": "Personas que sigues"
+    },
     "post": {
         "english": "Post",
         "danish": "Del",
@@ -178,6 +183,11 @@
         "english": "Follow",
         "danish": "Følg",
         "spanish": "Seguir"
+    },
+    "unfollow": {
+        "english": "Unfollow",
+        "danish": "Fjern følg",
+        "spanish": "Dejar de seguir"
     },
     "show_more": {
         "english": "Show more",

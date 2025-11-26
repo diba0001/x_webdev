@@ -79,6 +79,9 @@ def login(lan = "english"):
             if user["user_deleted_at"] != 0:
                  raise Exception(x.lans("user_not_found"), 400)
 
+            if user.get("user_blocked_at") != 0:
+                raise Exception(x.lans("user_not_found"), 400)
+
             if not check_password_hash(user["user_password"], user_password):
                 raise Exception(x.lans("invalid_credentials"), 400)
 
@@ -125,8 +128,8 @@ def signup(lan = "english"):
     if request.method == "POST":
         try:
             # Validate
-            user_email = x.validate_user_email()
-            user_password = x.validate_user_password()
+            user_email = x.validate_user_email(lan)
+            user_password = x.validate_user_password(lan)
             user_username = x.validate_user_username()
             user_first_name = x.validate_user_first_name()
 
@@ -135,14 +138,15 @@ def signup(lan = "english"):
             user_avatar_path = "https://avatar.iran.liara.run/public/40"
             user_verification_key = uuid.uuid4().hex
             user_verified_at = 0
+            user_deleted_at = 0
 
             user_hashed_password = generate_password_hash(user_password)
 
             # Connect to the database
-            q = "INSERT INTO users VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            q = "INSERT INTO users VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             db, cursor = x.db()
             cursor.execute(q, (user_pk, user_email, user_hashed_password, user_username, 
-            user_first_name, user_last_name, user_avatar_path, user_verification_key, user_verified_at))
+            user_first_name, user_last_name, user_avatar_path, user_verification_key, user_verified_at, user_deleted_at))
             db.commit()
 
             # send verification email
@@ -209,16 +213,43 @@ def home():
         q = "SELECT * FROM trends ORDER BY RAND() LIMIT 3"
         cursor.execute(q)
         trends = cursor.fetchall()
-        ic(trends)
+        # ic(trends)
 
-        q = "SELECT * FROM users WHERE user_pk != %s ORDER BY RAND() LIMIT 3"
-        cursor.execute(q, (user_pk,))
+        # Suggestions query to check if already followed
+        q = """
+            SELECT users.*, 
+            (SELECT COUNT(*) FROM follows WHERE follow_follower_fk = %s AND follow_followed_fk = users.user_pk) AS is_followed_by_user
+            FROM users users 
+            WHERE users.user_pk != %s 
+            AND users.user_pk NOT IN (SELECT follow_followed_fk FROM follows WHERE follow_follower_fk = %s)
+            ORDER BY RAND() LIMIT 5
+        """
+        cursor.execute(q, (user_pk, user_pk, user_pk))
         suggestions = cursor.fetchall()
-        ic(suggestions)
+
+        # Convert 1/0 to Boolean for Jinja
+        for suggestion in suggestions:
+            suggestion['is_followed_by_user'] = True if suggestion['is_followed_by_user'] > 0 else False
+        
+        # Following query to get users that the current user is following
+        q = """
+            SELECT 
+                users.*, 
+                (SELECT COUNT(*) FROM follows WHERE follow_follower_fk = %s AND follow_followed_fk = users.user_pk) AS is_followed_by_user
+            FROM users users
+            JOIN follows ON users.user_pk = follows.follow_followed_fk 
+            WHERE follows.follow_follower_fk = %s
+        """
+        cursor.execute(q, (user_pk, user_pk))
+        following = cursor.fetchall()
+
+         # Convert 1/0 to Boolean for Jinja
+        for follow in following:
+            follow['is_followed_by_user'] = True if follow['is_followed_by_user'] > 0 else False
 
         lan = session["user"]["user_language"]
 
-        return render_template("home.html", lan=lan, dictionary=dictionary, tweets=tweets, trends=trends, suggestions=suggestions, user=user)
+        return render_template("home.html", lan=lan, dictionary=dictionary, tweets=tweets, trends=trends, suggestions=suggestions, following=following, user=user)
     except Exception as ex:
         ic(ex)
         return "error"
@@ -307,6 +338,104 @@ def profile():
         pass
 
 
+##############################
+@app.get("/admin")
+def admin():
+    try:
+        user = session.get("user", "")
+        if not user: return redirect(url_for("login"))
+        
+        # Only allow admins; others go back to home
+        if not user.get("user_is_admin"):
+            return redirect(url_for("home"))
+
+        lan = session["user"]["user_language"]
+        
+        # Get all non-admin users
+        db, cursor = x.db()
+        q = "SELECT user_pk, user_username, user_blocked_at FROM users WHERE user_is_admin = 0 ORDER BY user_username"
+        cursor.execute(q)
+        users = cursor.fetchall()
+        html = render_template("_admin.html", user=user, users=users, lan=lan, x=x)
+        return f"""<browser mix-update="main">{ html }</browser>"""
+    except Exception as ex:
+        ic(ex)
+        return "error"
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+
+##############################
+@app.post("/api-admin-block-user")
+def api_admin_block_user():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user: return "invalid user", 401
+        if not admin_user.get("user_is_admin"): return "forbidden", 403
+
+        username = request.form.get("user_username", "").strip()
+        user_pk = request.form.get("user_pk", "").strip()
+        if not username: return "missing username", 400
+        if not user_pk: return "missing user_pk", 400
+
+        
+        db, cursor = x.db()
+        cursor.execute("UPDATE users SET user_blocked_at = %s WHERE user_pk = %s", (int(time.time()), user_pk))
+        db.commit()
+
+        btn_html = f"""
+          <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_unblock_user')}\" mix-post class=\"d-flex a-items-center\"> 
+            <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
+            <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
+            <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Unblock</button>
+          </form>
+        """
+        return f"""
+            <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################
+@app.post("/api-admin-unblock-user")
+def api_admin_unblock_user():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user: return "invalid user", 401
+        if not admin_user.get("user_is_admin"): return "forbidden", 403
+
+        username = request.form.get("user_username", "").strip()
+        user_pk = request.form.get("user_pk", "").strip()
+        if not username: return "missing username", 400
+        if not user_pk: return "missing user_pk", 400
+
+        # Persist: reset blocked timestamp
+        db, cursor = x.db()
+        cursor.execute("UPDATE users SET user_blocked_at = 0 WHERE user_pk = %s", (user_pk,))
+        db.commit()
+
+        btn_html = f"""
+          <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_block_user')}\" mix-post class=\"d-flex a-items-center\"> 
+            <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
+            <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
+            <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Block</button>
+          </form>
+        """
+        return f"""
+            <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 ##############################
 @app.patch("/like-tweet")
@@ -428,6 +557,73 @@ def api_unlike_tweet():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+##############################
+@app.post("/follow-user")
+@x.no_cache
+def follow_user():
+    try:
+        user = session.get("user")
+        if not user: return "unauthorized", 401
+        
+        follower_fk = user["user_pk"]
+        followed_fk = request.form.get("user_pk")
+        
+        if not followed_fk: raise Exception("User ID missing", 400)
+        
+        db, cursor = x.db()
+        
+        # Insert into follows table
+        q = "INSERT INTO follows (follow_follower_fk, follow_followed_fk, follow_timestamp) VALUES (%s, %s, %s)"
+        cursor.execute(q, (follower_fk, followed_fk, int(time.time())))
+        db.commit()
+        
+        # Return the Unfollow button to swap in the UI
+        btn = render_template("___button_unfollow.html", user_pk=followed_fk)
+        return f"""<mixhtml mix-replace="#follow_btn_{followed_fk}">{btn}</mixhtml>"""
+
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        # If already following, return success with Unfollow button to fix UI
+        if "Duplicate entry" in str(ex):
+            btn = render_template("___button_unfollow.html", user_pk=followed_fk)
+            return f"""<mixhtml mix-replace="#follow_btn_{followed_fk}">{btn}</mixhtml>"""
+        return "System Error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################
+@app.patch("/unfollow-user")
+@x.no_cache
+def unfollow_user():
+    try:
+        user = session.get("user")
+        if not user: return "unauthorized", 401
+        
+        follower_fk = user["user_pk"]
+        followed_fk = request.form.get("user_pk")
+        
+        if not followed_fk: raise Exception("User ID missing", 400)
+        
+        db, cursor = x.db()
+        
+        # Delete from follows table
+        q = "DELETE FROM follows WHERE follow_follower_fk = %s AND follow_followed_fk = %s"
+        cursor.execute(q, (follower_fk, followed_fk))
+        db.commit()
+        
+        # Return the Follow button to swap in the UI
+        btn = render_template("___button_follow.html", user_pk=followed_fk)
+        return f"""<mixhtml mix-replace="#follow_btn_{followed_fk}">{btn}</mixhtml>"""
+
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        return "System Error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 ##############################
 @app.route("/api-create-post", methods=["POST"])
@@ -511,6 +707,7 @@ def api_update_profile():
             user_last_name = %s
         WHERE user_pk = %s
         """
+
 
         db, cursor = x.db()
         # Avatar is handled in /api-upload-avatar; pass None to keep current value via COALESCE

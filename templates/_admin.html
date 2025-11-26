@@ -1,0 +1,26 @@
+<section class="pa-4">
+  <h1 class="text-140 text-w-bold mb-2">Admin</h1>
+  <h2 class="text-120 mb-2">Usernames</h2>
+  <div class="pa-2">
+    {% for u in users %}
+      <div class="d-flex a-items-center j-content-between pa-2 border-b-1 border-c-gray:+20">
+        <div class="text-100">@{{ u.user_username }}</div>
+        <div id="admin_btn_{{ u.user_username }}">
+          {% if u.user_blocked_at %}
+            <form action="{{ url_for('api_admin_unblock_user') }}" mix-post class="d-flex a-items-center">
+              <input type="hidden" name="user_username" value="{{ u.user_username }}">
+              <input type="hidden" name="user_pk" value="{{ u.user_pk }}">
+              <button class="px-4 py-1 text-c-black bg-c-white rounded-lg" type="submit" style="border: 1px solid black; cursor: pointer;">Unblock</button>
+            </form>
+          {% else %}
+            <form action="{{ url_for('api_admin_block_user') }}" mix-post class="d-flex a-items-center">
+              <input type="hidden" name="user_username" value="{{ u.user_username }}">
+              <input type="hidden" name="user_pk" value="{{ u.user_pk }}">
+              <button class="px-4 py-1 text-c-white bg-c-black rounded-lg" style="border: 1px solid black; cursor: pointer;" type="submit">Block</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
