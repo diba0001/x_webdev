@@ -119,8 +119,8 @@ def signup(lan = "english"):
     if request.method == "POST":
         try:
             # Validate
-            user_email = x.validate_user_email()
-            user_password = x.validate_user_password()
+            user_email = x.validate_user_email(lan)
+            user_password = x.validate_user_password(lan)
             user_username = x.validate_user_username()
             user_first_name = x.validate_user_first_name()
 
@@ -129,14 +129,15 @@ def signup(lan = "english"):
             user_avatar_path = "https://avatar.iran.liara.run/public/40"
             user_verification_key = uuid.uuid4().hex
             user_verified_at = 0
+            user_deleted_at = 0
 
             user_hashed_password = generate_password_hash(user_password)
 
             # Connect to the database
-            q = "INSERT INTO users VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            q = "INSERT INTO users VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             db, cursor = x.db()
             cursor.execute(q, (user_pk, user_email, user_hashed_password, user_username, 
-            user_first_name, user_last_name, user_avatar_path, user_verification_key, user_verified_at))
+            user_first_name, user_last_name, user_avatar_path, user_verification_key, user_verified_at, user_deleted_at))
             db.commit()
 
             # send verification email
