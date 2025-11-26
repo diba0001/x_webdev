@@ -27,7 +27,10 @@ ic(google_spread_sheet_key)
 def lans(key):
     with open("dictionary.json", 'r', encoding='utf-8') as file:
         data = json.load(file)
-    return data[key][default_language]
+    try:
+        return data[key][default_language]
+    except KeyError:
+        return key
 
 ##############################
 def db():

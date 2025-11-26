@@ -1,8 +1,67 @@
-<form id="post_container" action="{{ url_for('api_create_post') }}" mix-post class="d-flex flex-col w-full ml-2">
-    <textarea name="post" placeholder="What is new ?" 
-    class="w-full outline-1 outline-s-solid outline-c-gray:+50 pa-2"></textarea>
-    <button mix-default="Post" mix-await="Posting ..." 
-    class="w-auto ml-auto mt-2 bg-c-black text-c-white py-2 px-12 rounded-xl">
-        Post
-    </button>
+<form id="post_container" action="{{ url_for('api_create_post') }}" mix-post enctype="multipart/form-data"
+    class="d-flex flex-col w-full ml-2">
+    <textarea name="post" placeholder="What is new ?"
+        class="w-full outline-1 outline-s-solid outline-c-gray:+50 pa-2"></textarea>
+
+    <input type="file" id="post_file" name="post_file" accept="image/*" style="display: none;">
+
+    <div id="image_preview_container" class="mt-2" style="display: none;">
+        <div class="relative inline-block">
+            <img id="image_preview" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border">
+            <button type="button" onclick="removeImage()"
+                class="absolute -top-2 -right-2 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
+                X
+            </button>
+        </div>
+    </div>
+
+    <div class="d-flex mt-2 justify-end items-center gap-3">
+        <button type="button"
+            onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('post_file').click()"
+            class="p-2 rounded-full transition">
+            <i class="fa-regular fa-image text-xl"></i>
+        </button>
+
+        <button type="submit" mix-default="Post" mix-await="Posting ..." class="post-content-btn">
+            {{ x.lans("post") }}
+        </button>
+    </div>
 </form>
+
+<script>
+    // Use event delegation on document instead of direct element binding
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'post_file') {
+            e.stopPropagation();
+            e.preventDefault();
+
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    document.getElementById('image_preview').src = event.target.result;
+                    document.getElementById('image_preview_container').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+
+    function removeImage() {
+        const fileInput = document.getElementById('post_file');
+        const previewContainer = document.getElementById('image_preview_container');
+        if (fileInput) fileInput.value = '';
+        if (previewContainer) previewContainer.style.display = 'none';
+    }
+
+    // Use event delegation for form submit as well
+    document.addEventListener('submit', function (e) {
+        if (e.target && e.target.id === 'post_container') {
+            setTimeout(() => {
+                removeImage();
+                const textarea = e.target.querySelector('textarea');
+                if (textarea) textarea.value = '';
+            }, 1000);
+        }
+    });
+</script>

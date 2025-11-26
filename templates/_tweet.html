@@ -1,23 +1,35 @@
-<article class="post" mix-fade-in="5000">
-    <img src="{{ url_for('static', filename='images/'~(tweet.user_avatar_path if tweet.user_avatar_path else 'unknown.jpg')) }}" alt="Profile Picture" 
-    class="w-8 h-8 rounded-full">
+<article class="post relative" mix-fade-in="5000" id="post_{{ tweet.post_pk }}">
+    <img src="{{ url_for('static', filename='images/'~(tweet.user_avatar_path if tweet.user_avatar_path else 'unknown.jpg')) }}"
+        alt="Profile Picture" class="w-8 h-8 rounded-full">
     <div class="post-content">
         <div class="post-header">
-            <span class="name">
-                {{ tweet.user_first_name }}
-                {{ tweet.user_last_name }}
-            </span>
-            <span class="handle">@{{ tweet.user_username }}</span> · <span class="time">1d</span>
+            <div>
+                <span class="name">
+                    {{ tweet.user_first_name }}
+                    {{ tweet.user_last_name }}
+                </span>
+                <span class="handle">@{{ tweet.user_username }}</span> ·
+                <span class="time">
+                    {% if tweet.post_created_at %}
+                    {{ tweet.post_created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                    {% else %}
+                    Recently
+                    {% endif %}
+                </span>
+            </div>
         </div>
-        <p class="text">
+
+        <div class="text" id="post_text_{{ tweet.post_pk }}">
             {{ tweet.post_message }}
-        </p>
-        {% if tweet.post_image_path: %}
-        <img src="{{ url_for('static', filename='images/' ~ tweet.post_image_path) }}" alt="Post image" 
-        class="w-80">
+        </div>
+
+        {% if tweet.post_image_path %}
+        <img src="{{ url_for('static', filename='images/' ~ tweet.post_image_path) }}" alt="Post image"
+            id="post_image_{{ tweet.post_pk }}" class="w-80">
         {% endif %}
-        
+
         <div class="post-actions">
+
             <span class="action"><i class="fa-regular fa-comment"></i> 12</span>
             <span class="action"><i class="fa-solid fa-retweet"></i> 5</span>
             
@@ -32,6 +44,216 @@
 
             <span class="action"><i class="fa-solid fa-chart-simple"></i> 230</span>
             <span class="action"><i class="fa-solid fa-share"></i></span>
+
+            <!-- Edit + Delete - only show if user owns the ost -->
+            {% if user and user.user_pk == tweet.post_user_fk %}
+
+            <span class="action" onclick="editPost('{{ tweet.post_pk }}')" title="Edit post">
+                <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+            </span>
+
+            <span class="action" onclick="deletePost('{{ tweet.post_pk }}')" title="Delete post">
+                <i class="fa-solid fa-trash text-red-600"></i>
+            </span>
+
+            {% endif %}
         </div>
+
     </div>
 </article>
+
+<script>
+    function deletePost(postPk) {
+        if (!confirm('Delete this post?')) return;
+
+        fetch(`/api-delete-post/${postPk}`, {
+            method: "DELETE",
+            credentials: "include"
+        })
+            .then(res => {
+                if (res.ok) {
+                    const postElement = document.getElementById(`post_${postPk}`);
+                    if (postElement) postElement.remove();
+                }
+                return res.text();
+            })
+            .then(html => {
+                if (typeof mixhtml === 'function') {
+                    document.body.insertAdjacentHTML("beforeend", html);
+                    mixhtml(html, `/api-delete-post/${postPk}`);
+                }
+            })
+            .catch(err => console.error(err));
+    }
+
+    function handleFileChange(postPk) {
+        const fileInput = document.getElementById(`edit_file_${postPk}`);
+        const file = fileInput.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                document.getElementById(`edit_preview_img_${postPk}`).src = event.target.result;
+                document.getElementById(`edit_preview_${postPk}`).classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeEditImage(postPk) {
+        document.getElementById(`edit_file_${postPk}`).value = '';
+        document.getElementById(`edit_preview_${postPk}`).classList.add('hidden');
+    }
+
+    function triggerFileInput(postPk) {
+        document.getElementById(`edit_file_${postPk}`).click();
+    }
+
+    function editPost(postPk) {
+        const textElement = document.getElementById(`post_text_${postPk}`);
+        const imageElement = document.getElementById(`post_image_${postPk}`);
+
+        const currentText = textElement.textContent.trim();
+        const hasImage = imageElement !== null;
+
+        const editForm = `
+        <form id="edit_form_${postPk}">
+            <textarea name="post" class="w-full outline-1 outline-s-solid outline-c-gray:+50 pa-2 mb-2" rows="3">${currentText}</textarea>
+            
+            ${hasImage ? `
+                <div class="mb-2">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="remove_image" value="1"> Remove current image
+                    </label>
+                </div>
+            ` : ''}
+
+            <div class="mb-2">
+               <button type="button" id="btn_add_image_${postPk}" class="cursor-pointer inline-flex items-center gap-2 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded">
+                    <i class="fa-regular fa-image"></i>
+                    <span>Add/Change Image</span>
+                </button>
+                <input type="file" id="edit_file_${postPk}" name="post_file" accept="image/*" class="hidden">
+            </div>
+
+            <div id="edit_preview_${postPk}" class="mb-2 hidden">
+                <div class="relative inline-block">
+                    <img id="edit_preview_img_${postPk}" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border">
+                    <button type="button" id="btn_remove_preview_${postPk}" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg">×</button>
+                </div>
+            </div>
+
+            <div class="flex gap-2 items-center">
+                <button type="submit" class="post-content-btn">Save</button>
+                <button type="button" id="btn_cancel_${postPk}" class="cancel-btn text-white px-4 py-2 rounded">Cancel</button>
+            </div>
+        </form>`;
+
+        textElement.innerHTML = editForm;
+        if (imageElement) imageElement.classList.add('hidden');
+
+        // Attach event listeners after DOM insertion - use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+            const btnAddImage = document.getElementById(`btn_add_image_${postPk}`);
+            const fileInput = document.getElementById(`edit_file_${postPk}`);
+            const btnRemovePreview = document.getElementById(`btn_remove_preview_${postPk}`);
+            const btnCancel = document.getElementById(`btn_cancel_${postPk}`);
+            const editForm = document.getElementById(`edit_form_${postPk}`);
+
+            if (btnAddImage) {
+                btnAddImage.onclick = function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInput.click();
+                    return false;
+                };
+            }
+
+            if (fileInput) {
+                fileInput.onchange = function (e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                            document.getElementById(`edit_preview_img_${postPk}`).src = event.target.result;
+                            document.getElementById(`edit_preview_${postPk}`).classList.remove('hidden');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+            }
+
+            if (btnRemovePreview) {
+                btnRemovePreview.onclick = function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInput.value = '';
+                    document.getElementById(`edit_preview_${postPk}`).classList.add('hidden');
+                    return false;
+                };
+            }
+
+            if (btnCancel) {
+                btnCancel.onclick = function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    location.reload();
+                    return false;
+                };
+            }
+
+            if (editForm) {
+                editForm.onsubmit = function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const formData = new FormData(e.target);
+
+                    fetch(`/api-update-post/${postPk}`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                    })
+                        .then(res => res.text())
+                        .then(html => {
+                            document.body.insertAdjacentHTML('beforeend', html);
+                            if (typeof mix_convert === 'function') {
+                                mix_convert();
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Failed to update post');
+                        });
+                    return false;
+                };
+            }
+        }, 10);
+    }
+
+    function cancelEdit(postPk) {
+        location.reload();
+    }
+
+    function saveEdit(event, postPk) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+
+        fetch(`/api-update-post/${postPk}`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        })
+            .then(res => res.text())
+            .then(html => {
+                if (typeof mixhtml === 'function') {
+                    document.body.insertAdjacentHTML('beforeend', html);
+                    mixhtml(html, `/api-update-post/${postPk}`);
+                } else {
+                    document.body.insertAdjacentHTML('beforeend', html);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Failed to update post');
+            });
+    }
+</script>
