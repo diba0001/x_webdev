@@ -203,16 +203,43 @@ def home():
         q = "SELECT * FROM trends ORDER BY RAND() LIMIT 3"
         cursor.execute(q)
         trends = cursor.fetchall()
-        ic(trends)
+        # ic(trends)
 
-        q = "SELECT * FROM users WHERE user_pk != %s ORDER BY RAND() LIMIT 3"
-        cursor.execute(q, (user_pk,))
+        # Suggestions query to check if already followed
+        q = """
+            SELECT users.*, 
+            (SELECT COUNT(*) FROM follows WHERE follow_follower_fk = %s AND follow_followed_fk = users.user_pk) AS is_followed_by_user
+            FROM users users 
+            WHERE users.user_pk != %s 
+            AND users.user_pk NOT IN (SELECT follow_followed_fk FROM follows WHERE follow_follower_fk = %s)
+            ORDER BY RAND() LIMIT 5
+        """
+        cursor.execute(q, (user_pk, user_pk, user_pk))
         suggestions = cursor.fetchall()
-        ic(suggestions)
+
+        # Convert 1/0 to Boolean for Jinja
+        for suggestion in suggestions:
+            suggestion['is_followed_by_user'] = True if suggestion['is_followed_by_user'] > 0 else False
+        
+        # Following query to get users that the current user is following
+        q = """
+            SELECT 
+                users.*, 
+                (SELECT COUNT(*) FROM follows WHERE follow_follower_fk = %s AND follow_followed_fk = users.user_pk) AS is_followed_by_user
+            FROM users users
+            JOIN follows ON users.user_pk = follows.follow_followed_fk 
+            WHERE follows.follow_follower_fk = %s
+        """
+        cursor.execute(q, (user_pk, user_pk))
+        following = cursor.fetchall()
+
+         # Convert 1/0 to Boolean for Jinja
+        for follow in following:
+            follow['is_followed_by_user'] = True if follow['is_followed_by_user'] > 0 else False
 
         lan = session["user"]["user_language"]
 
-        return render_template("home.html", lan=lan, dictionary=dictionary, tweets=tweets, trends=trends, suggestions=suggestions, user=user)
+        return render_template("home.html", lan=lan, dictionary=dictionary, tweets=tweets, trends=trends, suggestions=suggestions, following=following, user=user)
     except Exception as ex:
         ic(ex)
         return "error"
@@ -422,6 +449,73 @@ def api_unlike_tweet():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+##############################
+@app.post("/follow-user")
+@x.no_cache
+def follow_user():
+    try:
+        user = session.get("user")
+        if not user: return "unauthorized", 401
+        
+        follower_fk = user["user_pk"]
+        followed_fk = request.form.get("user_pk")
+        
+        if not followed_fk: raise Exception("User ID missing", 400)
+        
+        db, cursor = x.db()
+        
+        # Insert into follows table
+        q = "INSERT INTO follows (follow_follower_fk, follow_followed_fk, follow_timestamp) VALUES (%s, %s, %s)"
+        cursor.execute(q, (follower_fk, followed_fk, int(time.time())))
+        db.commit()
+        
+        # Return the Unfollow button to swap in the UI
+        btn = render_template("___button_unfollow.html", user_pk=followed_fk)
+        return f"""<mixhtml mix-replace="#follow_btn_{followed_fk}">{btn}</mixhtml>"""
+
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        # If already following, return success with Unfollow button to fix UI
+        if "Duplicate entry" in str(ex):
+            btn = render_template("___button_unfollow.html", user_pk=followed_fk)
+            return f"""<mixhtml mix-replace="#follow_btn_{followed_fk}">{btn}</mixhtml>"""
+        return "System Error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################
+@app.patch("/unfollow-user")
+@x.no_cache
+def unfollow_user():
+    try:
+        user = session.get("user")
+        if not user: return "unauthorized", 401
+        
+        follower_fk = user["user_pk"]
+        followed_fk = request.form.get("user_pk")
+        
+        if not followed_fk: raise Exception("User ID missing", 400)
+        
+        db, cursor = x.db()
+        
+        # Delete from follows table
+        q = "DELETE FROM follows WHERE follow_follower_fk = %s AND follow_followed_fk = %s"
+        cursor.execute(q, (follower_fk, followed_fk))
+        db.commit()
+        
+        # Return the Follow button to swap in the UI
+        btn = render_template("___button_follow.html", user_pk=followed_fk)
+        return f"""<mixhtml mix-replace="#follow_btn_{followed_fk}">{btn}</mixhtml>"""
+
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        return "System Error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 ##############################
 @app.route("/api-create-post", methods=["POST"])
