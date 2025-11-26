@@ -2,13 +2,7 @@
     {{ x.lans("profile") }}
 </h1>
 
-<form class="x-dialog__form" action="{{ url_for('api_update_profile') }}" mix-post autocomplete="off" enctype="multipart/form-data">
-    <img id="profile_avatar" src="{{ url_for('static', filename='images/' ~ (user.user_avatar_path if user.user_avatar_path else 'unknown.jpg')) }}"
-        class="w-25 h-25 rounded-full obj-f-cover" alt="Profile Picture">
-    <div class="mt-2">
-        <label for="avatar"><span>Change profile picture</span></label>
-        <input type="file" id="avatar" name="avatar" accept="image/*">
-    </div>
+<form class="x-dialog__form" action="{{ url_for('api_update_profile') }}" mix-post autocomplete="off">
     <div>
         <label for="user_email">
         <span>{{ x.lans("email") }}</span>
@@ -33,8 +27,3 @@
         {{ x.lans('update_profile') }}
     </button>
 </form>
-<div class="py-8 d-flex flex-col a-items-center">
-    <a href="{{ url_for('api_delete_profile') }}" class="text-c-red" hover="cursor-pointer">
-        Delete account
-    </a>
-</div>
