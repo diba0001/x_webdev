@@ -424,6 +424,17 @@ def api_unlike_tweet():
 
 
 ##############################
+
+@app.get("/comments")
+def comments():
+    try:
+        pass
+    except Exception as ex:
+        ic(ex)
+    finally:
+        pass
+
+##############################
 @app.route("/api-create-post", methods=["POST"])
 def api_create_post():
     try:
