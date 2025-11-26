@@ -1,0 +1,13 @@
+<div id="profile_tag">
+    <img src="{{ url_for('static', filename='images/' ~ (user.user_avatar_path if user.user_avatar_path else 'unknown.jpg')) }}"
+        class="w-8 h-8 rounded-full obj-f-cover" alt="Profile Picture">
+    <div>
+        <div class="name">
+            {{ user.user_first_name }}
+        </div>
+        <div class="handle">
+            @{{ user.user_username }}
+        </div>
+    </div>
+    <i class="fa-solid fa-ellipsis option"></i>
+</div>

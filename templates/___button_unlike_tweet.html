@@ -1,3 +1,9 @@
-<button class="action" mix-patch="/unlike-tweet">
-    <i class="fa-solid fa-heart"></i>     
-</button>
+<span id="button_container_{{ post_pk }}" class="action">
+    <form class="action" mix-patch="/unlike-tweet">
+        <input type="hidden" name="post_pk" value="{{ post_pk }}">
+        <button type="submit" style="pointer-events: none;">
+            <i class="fa-solid fa-heart"></i>     
+        </button>
+    </form>
+    {{ like_count }}
+</span>
