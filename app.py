@@ -23,14 +23,7 @@ app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024   # 1 MB
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
  
-
-##############################
-@app.before_request
-def load_g_user():
-    g.user = session.get("user")
-
  
-
 ##############################
 @app.before_request
 def load_g_user():
