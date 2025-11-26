@@ -73,6 +73,9 @@ def login(lan = "english"):
             if user["user_deleted_at"] != 0:
                  raise Exception(x.lans("user_not_found"), 400)
 
+            if user.get("user_blocked_at") != 0:
+                raise Exception(x.lans("user_not_found"), 400)
+
             if not check_password_hash(user["user_password"], user_password):
                 raise Exception(x.lans("invalid_credentials"), 400)
 
@@ -329,6 +332,104 @@ def profile():
         pass
 
 
+##############################
+@app.get("/admin")
+def admin():
+    try:
+        user = session.get("user", "")
+        if not user: return redirect(url_for("login"))
+        
+        # Only allow admins; others go back to home
+        if not user.get("user_is_admin"):
+            return redirect(url_for("home"))
+
+        lan = session["user"]["user_language"]
+        
+        # Get all non-admin users
+        db, cursor = x.db()
+        q = "SELECT user_pk, user_username, user_blocked_at FROM users WHERE user_is_admin = 0 ORDER BY user_username"
+        cursor.execute(q)
+        users = cursor.fetchall()
+        html = render_template("_admin.html", user=user, users=users, lan=lan, x=x)
+        return f"""<browser mix-update="main">{ html }</browser>"""
+    except Exception as ex:
+        ic(ex)
+        return "error"
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+
+##############################
+@app.post("/api-admin-block-user")
+def api_admin_block_user():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user: return "invalid user", 401
+        if not admin_user.get("user_is_admin"): return "forbidden", 403
+
+        username = request.form.get("user_username", "").strip()
+        user_pk = request.form.get("user_pk", "").strip()
+        if not username: return "missing username", 400
+        if not user_pk: return "missing user_pk", 400
+
+        
+        db, cursor = x.db()
+        cursor.execute("UPDATE users SET user_blocked_at = %s WHERE user_pk = %s", (int(time.time()), user_pk))
+        db.commit()
+
+        btn_html = f"""
+          <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_unblock_user')}\" mix-post class=\"d-flex a-items-center\"> 
+            <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
+            <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
+            <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Unblock</button>
+          </form>
+        """
+        return f"""
+            <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################
+@app.post("/api-admin-unblock-user")
+def api_admin_unblock_user():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user: return "invalid user", 401
+        if not admin_user.get("user_is_admin"): return "forbidden", 403
+
+        username = request.form.get("user_username", "").strip()
+        user_pk = request.form.get("user_pk", "").strip()
+        if not username: return "missing username", 400
+        if not user_pk: return "missing user_pk", 400
+
+        # Persist: reset blocked timestamp
+        db, cursor = x.db()
+        cursor.execute("UPDATE users SET user_blocked_at = 0 WHERE user_pk = %s", (user_pk,))
+        db.commit()
+
+        btn_html = f"""
+          <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_block_user')}\" mix-post class=\"d-flex a-items-center\"> 
+            <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
+            <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
+            <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Block</button>
+          </form>
+        """
+        return f"""
+            <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 ##############################
 @app.patch("/like-tweet")
@@ -611,6 +712,7 @@ def api_update_profile():
             "UPDATE users SET user_email = %s, user_username = %s, user_first_name = %s, "
             "user_avatar_path = COALESCE(%s, user_avatar_path) WHERE user_pk = %s"
         )
+
         db, cursor = x.db()
         cursor.execute(q, (user_email, user_username, user_first_name, filename, user["user_pk"]))
         db.commit()
