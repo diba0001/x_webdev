@@ -590,20 +590,54 @@ def api_update_profile():
         user_username = x.validate_user_username()
         user_first_name = x.validate_user_first_name()
 
+        # Optional: handle avatar upload 
+        filename = None
+        new_src = ""
+        file = request.files.get("avatar")
+        if file and file.filename:
+            from werkzeug.utils import secure_filename
+            name = secure_filename(file.filename)
+            if "." in name:
+                ext = name.rsplit(".", 1)[1].lower()
+                images_dir = os.path.join(app.root_path, "static", "images")
+                os.makedirs(images_dir, exist_ok=True)
+                filename = f"{uuid.uuid4().hex}.{ext}"
+                file.save(os.path.join(images_dir, filename))
+                new_src = url_for('static', filename=f"images/{filename}") + f"?v={int(time.time())}"
+
         # Connect to the database
-        q = "UPDATE users SET user_email = %s, user_username = %s, user_first_name = %s WHERE user_pk = %s"
+        q = (
+            "UPDATE users SET user_email = %s, user_username = %s, user_first_name = %s, "
+            "user_avatar_path = COALESCE(%s, user_avatar_path) WHERE user_pk = %s"
+        )
         db, cursor = x.db()
-        cursor.execute(q, (user_email, user_username, user_first_name, user["user_pk"]))
+        cursor.execute(q, (user_email, user_username, user_first_name, filename, user["user_pk"]))
         db.commit()
+
+        # Update session minimally
+        session["user"]["user_email"] = user_email
+        session["user"]["user_username"] = user_username
+        session["user"]["user_first_name"] = user_first_name
+        if filename:
+            session["user"]["user_avatar_path"] = filename
 
         # Response to the browser
       
         toast_ok = render_template("___toast_ok.html", message=f"{x.lans('profile_updated_successfully')}")
+        avatar_updates = ""
+        if filename:
+            nav_html = render_template("___nav_profile_tag.html", user=session["user"])
+            avatar_updates = f"""
+                <browser mix-replace="#profile_avatar">
+                    <img id=\"profile_avatar\" src=\"{new_src}\" class=\"w-25 h-25 rounded-full obj-f-cover\" alt=\"Profile Picture\">
+                </browser>
+                <browser mix-replace="#profile_tag">{nav_html}</browser>
+            """
         return f"""
             <browser mix-bottom="#toast">{toast_ok}</browser>
             <browser mix-update="#profile_tag .name">{user_first_name}</browser>
             <browser mix-update="#profile_tag .handle">{user_username}</browser>
-            
+            {avatar_updates}
         """, 200
     except Exception as ex:
         ic(ex)

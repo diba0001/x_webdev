@@ -66,18 +66,7 @@
 
             <button class="post-btn">{{ x.lans("post") }}</button>
 
-            <div id="profile_tag">
-                <img src="{{ url_for('static', filename='images/avatar_1.jpg') }}" alt="Profile">
-                <div>
-                    <div class="name">
-                        {{ user.user_first_name }}
-                    </div>
-                    <div class="handle">
-                        @{{ user.user_username }}
-                    </div>
-                </div>
-                <i class="fa-solid fa-ellipsis option"></i>
-            </div>
+            {% include "___nav_profile_tag.html" %}
         </nav>
 
         <main class="px-4 h-full">

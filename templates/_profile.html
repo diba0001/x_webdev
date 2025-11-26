@@ -2,7 +2,13 @@
     {{ x.lans("profile") }}
 </h1>
 
-<form class="x-dialog__form" action="{{ url_for('api_update_profile') }}" mix-post autocomplete="off">
+<form class="x-dialog__form" action="{{ url_for('api_update_profile') }}" mix-post autocomplete="off" enctype="multipart/form-data">
+    <img id="profile_avatar" src="{{ url_for('static', filename='images/' ~ (user.user_avatar_path if user.user_avatar_path else 'unknown.jpg')) }}"
+        class="w-25 h-25 rounded-full obj-f-cover" alt="Profile Picture">
+    <div class="mt-2">
+        <label for="avatar"><span>Change profile picture</span></label>
+        <input type="file" id="avatar" name="avatar" accept="image/*">
+    </div>
     <div>
         <label for="user_email">
         <span>{{ x.lans("email") }}</span>
