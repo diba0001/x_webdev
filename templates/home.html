@@ -61,8 +61,7 @@
                 </li>
 
                 <li><a href="#"><i class="fa-solid fa-ellipsis"></i><span>{{ x.lans("more") }}</span></a></li>
-                <li><a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span>{{
-                            x.lans("logout") }}</span></a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span>{{ x.lans("logout") }}</span></a></li>
             </ul>
 
             <button class="post-btn">{{ x.lans("post") }}</button>
@@ -121,6 +120,18 @@
 
                     <button class="text-c-tealblue text-90">{{ x.lans("show_more") }}</button>
                 </div>
+            </div>
+            <div class="mt-2 border-c-gray:+50 border-1 rounded-md pa-2">
+                <h2 class="text-120 text-w-bold">{{ x.lans("following") }}</h2>
+                <div class="">
+
+                    {% for follow in following: %}
+                    {% include "_following.html" %}
+                    {% endfor %}
+
+                    <button class="text-c-tealblue text-90">{{ x.lans("show_more") }}</button>
+                </div>
+            </div>
         </aside>
     </div>
 
