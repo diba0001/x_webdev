@@ -353,10 +353,17 @@ def admin():
         
         # Get all non-admin users
         db, cursor = x.db()
-        q = "SELECT user_pk, user_username, user_blocked_at FROM users WHERE user_is_admin = 0 ORDER BY user_username"
+        q = """
+        SELECT user_pk, user_username, user_first_name, user_blocked_at
+        FROM users
+        WHERE user_is_admin = 0
+        ORDER BY user_username
+        """
         cursor.execute(q)
         users = cursor.fetchall()
-        html = render_template("_admin.html", user=user, users=users, lan=lan, x=x)
+
+        # This sends tab='users' to the template
+        html = render_template("_admin.html", user=user, users=users, lan=lan, x=x, tab="users")
         return f"""<browser mix-update="main">{ html }</browser>"""
     except Exception as ex:
         ic(ex)
@@ -365,6 +372,69 @@ def admin():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+##############################
+@app.get("/admin-users-section")
+def admin_users_section():
+    try:
+        user = session.get("user", "")
+        if not user:
+            return redirect(url_for("login"))
+
+        if not user.get("user_is_admin"):
+            return redirect(url_for("home"))
+
+        db, cursor = x.db()
+        q = """
+        SELECT user_pk, user_username, user_first_name, user_blocked_at
+        FROM users
+        WHERE user_is_admin = 0
+        ORDER BY user_username
+        """
+        cursor.execute(q)
+        users = cursor.fetchall()
+
+        # This sends tab='users' to the nav template
+        nav_html = render_template("___admin_nav.html", tab="users")
+        content_html = render_template("_admin_users.html", users=users, user=user, x=x)
+
+        return f"""
+        <browser mix-update="#admin_nav">{ nav_html }</browser>
+        <browser mix-update="#admin_content">{ content_html }</browser>
+        """
+    except Exception as ex:
+        ic(ex)
+        return "error"
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+##############################
+@app.get("/admin-posts-section")
+def admin_posts_section():
+    try:
+        user = session.get("user", "")
+        if not user:
+            return redirect(url_for("login"))
+
+        if not user.get("user_is_admin"):
+            return redirect(url_for("home"))
+
+        # This sends tab='posts' to the nav template
+        nav_html = render_template("___admin_nav.html", tab="posts")
+        content_html = render_template("_admin_posts.html", user=user, x=x)
+
+        return f"""
+        <browser mix-update="#admin_nav">{ nav_html }</browser>
+        <browser mix-update="#admin_content">{ content_html }</browser>
+        """
+    except Exception as ex:
+        ic(ex)
+        return "error"
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 
 ##############################
@@ -385,11 +455,26 @@ def api_admin_block_user():
         cursor.execute("UPDATE users SET user_blocked_at = %s WHERE user_pk = %s", (int(time.time()), user_pk))
         db.commit()
 
+        try:
+            cursor.execute("SELECT user_email FROM users WHERE user_pk = %s", (user_pk,))
+            user_row = cursor.fetchone()
+            if user_row and user_row.get("user_email"):
+                blocked_email = user_row["user_email"]
+                subject = "Your account has been blocked"
+                body = f"""
+                <p>Hello {username},</p>
+                <p>Your account has been blocked by an administrator.</p>
+                <p>If you believe this is a mistake, please contact support.</p>
+                """
+                x.send_email(blocked_email, subject, body)
+        except Exception as email_ex:
+            ic(f"Failed to send block email: {email_ex}")
+
         btn_html = f"""
           <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_unblock_user')}\" mix-post class=\"d-flex a-items-center\"> 
             <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
             <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
-            <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Unblock</button>
+            <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">Unblock</button>
           </form>
         """
         return f"""
@@ -420,11 +505,26 @@ def api_admin_unblock_user():
         cursor.execute("UPDATE users SET user_blocked_at = 0 WHERE user_pk = %s", (user_pk,))
         db.commit()
 
+        try:
+            cursor.execute("SELECT user_email FROM users WHERE user_pk = %s", (user_pk,))
+            user_row = cursor.fetchone()
+            if user_row and user_row.get("user_email"):
+                unblocked_email = user_row["user_email"]
+                subject = "Your account has been unblocked"
+                body = f"""
+                <p>Hello {username},</p>
+                <p>Your account has been unblocked by an administrator.</p>
+                <p>You can now login to the account again</p>
+                """
+                x.send_email(unblocked_email, subject, body)
+        except Exception as email_ex:
+            ic(f"Failed to send unblock email: {email_ex}")
+
         btn_html = f"""
           <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_block_user')}\" mix-post class=\"d-flex a-items-center\"> 
             <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
             <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
-            <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Block</button>
+            <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">Block</button>
           </form>
         """
         return f"""

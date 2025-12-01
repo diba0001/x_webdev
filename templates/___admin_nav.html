@@ -1,0 +1,8 @@
+<button mix-get="{{ url_for('admin_users_section') }}"
+  class="admin-nav-btn {% if tab == 'users' %}active{% endif %}">
+  Users
+</button>
+
+<button mix-get="{{ url_for('admin_posts_section') }}" class="admin-nav-btn {% if tab == 'posts' %}active{% endif %}">
+  Blocked posts
+</button>
