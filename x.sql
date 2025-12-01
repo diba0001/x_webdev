@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: mariadb
--- Generation Time: Nov 26, 2025 at 02:22 PM
+-- Generation Time: Dec 01, 2025 at 09:38 AM
 -- Server version: 10.6.20-MariaDB-ubu2004
 -- PHP Version: 8.2.27
 
@@ -32,6 +32,14 @@ CREATE TABLE `follows` (
   `follow_followed_fk` char(32) NOT NULL,
   `follow_timestamp` int(10) UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `follows`
+--
+
+INSERT INTO `follows` (`follow_follower_fk`, `follow_followed_fk`, `follow_timestamp`) VALUES
+('', '805a39cd8c854ee8a83555a308645bf5', 1764185172),
+('', '88a93bb5267e443eb0047f421a7a2f34', 1764581121);
 
 -- --------------------------------------------------------
 
@@ -73,7 +81,7 @@ CREATE TABLE `posts` (
 INSERT INTO `posts` (`post_pk`, `post_user_fk`, `post_message`, `post_total_likes`, `post_image_path`) VALUES
 ('1e5ecc804e1f46bc8e723437bf4bfc4b', '225a9fc15b8f409aa5c8ee7eafee516b', 'And this just works!', 1, 'post_3.jpg'),
 ('28dd4c1671634d73acd29a0ab109bef1', '805a39cd8c854ee8a83555a308645bf5', 'My first super life !', 1, 'post_3.jpg'),
-('299323cf81924589b0de265e715a1f9e', '225a9fc15b8f409aa5c8ee7eafee516b', 'test3', 0, 'post_1.jpg'),
+('299323cf81924589b0de265e715a1f9e', '225a9fc15b8f409aa5c8ee7eafee516b', 'test3', 1, 'post_1.jpg'),
 ('7d6f40e626c54efaa32494bce5f739d7', '88a93bb5267e443eb0047f421a7a2f34', 'test', 1, 'post_2.jpg'),
 ('99fefea24ea5419da19ed1f8cf8e9499', '225a9fc15b8f409aa5c8ee7eafee516b', 'wow', 0, 'post_1.jpg'),
 ('bcaa6df8880e411a9c25deaafae2314a', '225a9fc15b8f409aa5c8ee7eafee516b', 'test4', 2, '');
@@ -111,22 +119,25 @@ CREATE TABLE `users` (
   `user_username` varchar(20) NOT NULL,
   `user_first_name` varchar(20) NOT NULL,
   `user_last_name` varchar(20) NOT NULL DEFAULT '',
-  `user_avatar_path` varchar(50) NOT NULL,
+  `user_avatar_path` varchar(255) NOT NULL,
   `user_verification_key` char(32) NOT NULL,
   `user_verified_at` bigint(20) UNSIGNED NOT NULL,
-  `user_deleted_at` bigint(20) UNSIGNED NOT NULL
+  `user_deleted_at` bigint(20) UNSIGNED NOT NULL,
+  `user_is_admin` tinyint(1) NOT NULL DEFAULT 0,
+  `user_blocked_at` bigint(20) UNSIGNED NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_pk`, `user_email`, `user_password`, `user_username`, `user_first_name`, `user_last_name`, `user_avatar_path`, `user_verification_key`, `user_verified_at`, `user_deleted_at`) VALUES
-('225a9fc15b8f409aa5c8ee7eafee516b', 'a@a.com', 'scrypt:32768:8:1$wnse70hQwhCvR9tC$724c32a91b5f277201afbb141f9293a93168327df5c9124f482d3c32b8dff991c41629f477dfaee021965f9b15318a4257aad2e933101a4c998ef3c346fc84e4', 'aTest', 'Tester', '', 'avatar_1.jpg', '', 455656, 0),
-('6b48c6095913402eb4841529830e5415', 'a@a1.com', 'scrypt:32768:8:1$rRjuDGIwaA31YlPi$f73f9a059fb3757ba6724d9c94e2a192d8b8d59fcd18d7b11c57e508f1b9cfb94bb7c6fd4f8d632b777e31cd47aef9c95adcad2451786cbb7e7c073fe8cbaf3a', 'santiago1', 'Santiago', '', 'https://avatar.iran.liara.run/public/40', 'ee92b2c86a6c48569138a43ce8bc1d48', 0, 0),
-('805a39cd8c854ee8a83555a308645bf5', 'fullflaskdemomail@gmail.com', 'scrypt:32768:8:1$VlBgiW1xFsZuKRML$a5f61d62ac3f45d42c58cf8362637e717793b8760f026b1b47b7bfec47037abbe13e1c20e8bdc66fc03cc153d0bcf6185e15cf25ad58eb9d344267882dd7e78c', 'santiago', 'Santiago', '', 'avatar_1.jpg', '', 565656, 0),
-('88a93bb5267e443eb0047f421a7a2f34', 'santi@gmail.com', 'scrypt:32768:8:1$PEIO0eliDPqnCCbw$acb791128831bc90030ac363e4b76db196689bd99c1ccde5c2c20a7d4fe909e07129f3f4fd4f086e347375edbb8229e9ba5dc126cc14f6107fb1fc2abf6498f8', 'gustav', 'Gustav', '', 'avatar_2.jpg', '', 54654564, 0),
-('9860c6174a3141c5b1e7c8b3638b2f2b', 'maltheaaen@gmail.com', 'scrypt:32768:8:1$5NSH8Gsqi83lQV24$b61989755f5e00e7632463dee7b806b93acab7d4de36b6e32caf47a2fcef8bf23db0624a3767d5bae3ba40c77673171dad51a4b472e44a9463fc141a0b7f37bb', 'Malt', 'Malthe', '', 'https://avatar.iran.liara.run/public/40', '', 54654564, 0);
+INSERT INTO `users` (`user_pk`, `user_email`, `user_password`, `user_username`, `user_first_name`, `user_last_name`, `user_avatar_path`, `user_verification_key`, `user_verified_at`, `user_deleted_at`, `user_is_admin`, `user_blocked_at`) VALUES
+('', 'r@r.com', 'scrypt:32768:8:1$wnse70hQwhCvR9tC$724c32a91b5f277201afbb141f9293a93168327df5c9124f482d3c32b8dff991c41629f477dfaee021965f9b15318a4257aad2e933101a4c998ef3c346fc84e4', 'Rasmus-Olsen', 'Rasmus', '', 'static/images/avatars/999e48691b45492b98abf378744061f1.jpeg', '', 12321321, 0, 1, 0),
+('225a9fc15b8f409aa5c8ee7eafee516b', 'a@a.com', 'scrypt:32768:8:1$wnse70hQwhCvR9tC$724c32a91b5f277201afbb141f9293a93168327df5c9124f482d3c32b8dff991c41629f477dfaee021965f9b15318a4257aad2e933101a4c998ef3c346fc84e4', 'aTest', 'Tester', '', 'static/images/avatars/avatar_1.jpg', '', 455656, 0, 0, 0),
+('6b48c6095913402eb4841529830e5415', 'a@a1.com', 'scrypt:32768:8:1$rRjuDGIwaA31YlPi$f73f9a059fb3757ba6724d9c94e2a192d8b8d59fcd18d7b11c57e508f1b9cfb94bb7c6fd4f8d632b777e31cd47aef9c95adcad2451786cbb7e7c073fe8cbaf3a', 'santiago1', 'Santiago', '', 'static/images/avatars/avatar_3.jpg', 'ee92b2c86a6c48569138a43ce8bc1d48', 0, 0, 0, 0),
+('805a39cd8c854ee8a83555a308645bf5', 'fullflaskdemomail@gmail.com', 'scrypt:32768:8:1$VlBgiW1xFsZuKRML$a5f61d62ac3f45d42c58cf8362637e717793b8760f026b1b47b7bfec47037abbe13e1c20e8bdc66fc03cc153d0bcf6185e15cf25ad58eb9d344267882dd7e78c', 'santiago', 'Santiago', '', 'static/images/avatars/avatar_1.jpg', '', 565656, 0, 0, 0),
+('88a93bb5267e443eb0047f421a7a2f34', 'santi@gmail.com', 'scrypt:32768:8:1$PEIO0eliDPqnCCbw$acb791128831bc90030ac363e4b76db196689bd99c1ccde5c2c20a7d4fe909e07129f3f4fd4f086e347375edbb8229e9ba5dc126cc14f6107fb1fc2abf6498f8', 'gustav', 'Gustav', '', '', '', 54654564, 0, 0, 0),
+('9860c6174a3141c5b1e7c8b3638b2f2b', 'maltheaaen@gmail.com', 'scrypt:32768:8:1$5NSH8Gsqi83lQV24$b61989755f5e00e7632463dee7b806b93acab7d4de36b6e32caf47a2fcef8bf23db0624a3767d5bae3ba40c77673171dad51a4b472e44a9463fc141a0b7f37bb', 'Malt', 'Malthe', '', 'static/images/avatars/avatar_4.jpg', '', 54654564, 0, 0, 1764185133);
 
 --
 -- Indexes for dumped tables
