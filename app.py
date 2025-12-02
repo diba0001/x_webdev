@@ -199,6 +199,7 @@ def home():
                 (SELECT COUNT(*) FROM likes WHERE like_post_fk = p.post_pk AND like_user_fk = %s) AS is_liked_by_user
             FROM posts p
             JOIN users u ON u.user_pk = p.post_user_fk 
+            WHERE p.post_blocked_at = 0
             ORDER BY RAND() LIMIT 5
         """
         cursor.execute(q, (user_pk,))
@@ -421,9 +422,47 @@ def admin_posts_section():
         if not user.get("user_is_admin"):
             return redirect(url_for("home"))
 
+        db, cursor = x.db()
+
+        # Get blocked posts with user fields and like status like the home feed
+        user_pk = user["user_pk"]
+        q = """
+            SELECT 
+                p.post_pk,
+                p.post_message,
+                p.post_image_path,
+                p.post_total_likes,
+                p.post_blocked_at,
+                u.user_first_name,
+                u.user_last_name,
+                u.user_username,
+                u.user_avatar_path,
+                (
+                    SELECT COUNT(*) 
+                    FROM likes 
+                    WHERE like_post_fk = p.post_pk AND like_user_fk = %s
+                ) AS is_liked_by_user
+            FROM posts p
+            JOIN users u ON u.user_pk = p.post_user_fk 
+            WHERE p.post_blocked_at != 0
+            ORDER BY p.post_blocked_at DESC
+        """
+        cursor.execute(q, (user_pk,))
+        blocked_posts = cursor.fetchall()
+
+        content_html = render_template("_admin_posts.html", blocked_posts=blocked_posts, user=user, x=x)
+        nav_html = render_template("___admin_nav.html", tab="posts")
+
+        return f"""
+        <browser mix-update="#admin_nav">{ nav_html }</browser>
+        <browser mix-update="#admin_content">{ content_html }</browser>
+        """
+
+        # Explicitly pass all necessary context to the template
+        content_html = render_template("_admin_posts.html", blocked_posts=blocked_posts, user=user, x=x)
+        
         # This sends tab='posts' to the nav template
         nav_html = render_template("___admin_nav.html", tab="posts")
-        content_html = render_template("_admin_posts.html", user=user, x=x)
 
         return f"""
         <browser mix-update="#admin_nav">{ nav_html }</browser>
@@ -477,7 +516,9 @@ def api_admin_block_user():
             <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">Unblock</button>
           </form>
         """
+        toast_ok = render_template("___toast_ok.html", message="User blocked")
         return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
             <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
         """, 200
     except Exception as ex:
@@ -527,7 +568,9 @@ def api_admin_unblock_user():
             <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">Block</button>
           </form>
         """
+        toast_ok = render_template("___toast_ok.html", message="User unblocked")
         return f"""
+            <browser mix-bottom=\"#toast\">{toast_ok}</browser>
             <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
         """, 200
     except Exception as ex:
@@ -536,6 +579,85 @@ def api_admin_unblock_user():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
+##############################
+@app.post("/api-admin-block-post")
+def api_admin_block_post():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user or not admin_user.get("user_is_admin"):
+            return "forbidden", 403
+
+        post_pk = request.form.get("post_pk", "")
+        if not post_pk:
+            return "missing post_pk", 400
+
+        db, cursor = x.db()
+        cursor.execute("UPDATE posts SET post_blocked_at = %s WHERE post_pk = %s", (int(time.time()), post_pk))
+        db.commit()
+        
+        btn_html = f"""
+        <div id="block-btn-{post_pk}">
+            <form mix-post="{url_for('api_admin_unblock_post')}" mix-target="#block-btn-{post_pk}"
+                class="px-4 py-1 ma-0 bg-c-white rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center"
+                style="border: 1px solid black;">
+                <input type="hidden" name="post_pk" value="{post_pk}">
+                <button type="submit" class="text-c-black cursor-pointer">Unblock</button>
+            </form>
+        </div>
+        """
+        toast_ok = render_template("___toast_ok.html", message="Post blocked")
+        return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-replace="#block-btn-{post_pk}">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################
+@app.post("/api-admin-unblock-post")
+def api_admin_unblock_post():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user or not admin_user.get("user_is_admin"):
+            return "forbidden", 403
+
+        post_pk = request.form.get("post_pk", "")
+        if not post_pk:
+            return "missing post_pk", 400
+
+        source = request.form.get("source", "")
+
+        db, cursor = x.db()
+        cursor.execute("UPDATE posts SET post_blocked_at = 0 WHERE post_pk = %s", (post_pk,))
+        db.commit()
+
+        toast_ok = render_template("___toast_ok.html", message="Post unblocked")
+        btn_html = f"""
+        <div id=\"block-btn-{post_pk}\"> 
+            <form mix-post=\"{url_for('api_admin_block_post')}\" mix-target=\"#block-btn-{post_pk}\"
+                class=\"px-4 py-1 ma-0 bg-c-black rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center\"
+                style=\"border: 1px solid black;\"> 
+                <input type=\"hidden\" name=\"post_pk\" value=\"{post_pk}\"> 
+                <button type=\"submit\" class=\"text-c-white cursor-pointer\">Block</button>
+            </form>
+        </div>
+        """
+        return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-replace="#block-btn-{post_pk}">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+        
 
 ##############################
 @app.patch("/like-tweet")
