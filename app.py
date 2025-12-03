@@ -363,8 +363,7 @@ def admin():
         cursor.execute(q)
         users = cursor.fetchall()
 
-        # This sends tab='users' to the template
-        html = render_template("_admin.html", user=user, users=users, lan=lan, x=x, tab="users")
+        html = render_template("_admin.html", user=user, users=users, lan=lan, x=x)
         return f"""<browser mix-update="main">{ html }</browser>"""
     except Exception as ex:
         ic(ex)
@@ -395,8 +394,6 @@ def admin_users_section():
         cursor.execute(q)
         users = cursor.fetchall()
 
-        # This sends tab='users' to the nav template
-        nav_html = render_template("___admin_nav.html", tab="users")
         content_html = render_template("_admin_users.html", users=users, user=user, x=x)
 
         return f"""
@@ -451,18 +448,7 @@ def admin_posts_section():
         blocked_posts = cursor.fetchall()
 
         content_html = render_template("_admin_posts.html", blocked_posts=blocked_posts, user=user, x=x)
-        nav_html = render_template("___admin_nav.html", tab="posts")
-
-        return f"""
-        <browser mix-update="#admin_nav">{ nav_html }</browser>
-        <browser mix-update="#admin_content">{ content_html }</browser>
-        """
-
-        # Explicitly pass all necessary context to the template
-        content_html = render_template("_admin_posts.html", blocked_posts=blocked_posts, user=user, x=x)
-        
-        # This sends tab='posts' to the nav template
-        nav_html = render_template("___admin_nav.html", tab="posts")
+        nav_html = render_template("___admin_nav.html")
 
         return f"""
         <browser mix-update="#admin_nav">{ nav_html }</browser>
