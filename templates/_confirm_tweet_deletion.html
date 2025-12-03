@@ -21,9 +21,7 @@
         <div style="flex: 1; overflow-y: auto; padding: 1rem 1.5rem;">
             <div class="p-6">
                 <p style="color: #6b7280; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                    This can't be undone and it will be removed from your profile, the timeline of any
-                    accounts that
-                    follow you, and from search results.
+                    {{ x.lans("this_cant_be_undone") }}
                 </p>
 
                 <!-- footer -->
@@ -31,10 +29,7 @@
                     <button type="button" onclick="closeDeleteModal()" class="px-5 py-2.5 cancel-btn">
                         {{ x.lans("cancel") }}
                     </button>
-                    <button type="button" onclick="confirmDelete()"
-                        style="background-color: #dc2626; color: white; font-weight: 600; padding: 0.625rem 1.25rem; border-radius: 0.5rem; border: none; cursor: pointer; transition: all 0.2s;"
-                        onmouseover="this.style.backgroundColor='#b91c1c'"
-                        onmouseout="this.style.backgroundColor='#dc2626'">
+                    <button type="button" onclick="confirmDelete()" class="px-5 py-2.5 delete-btn">
                         {{ x.lans("delete") }}
                     </button>
                 </div>

@@ -489,10 +489,24 @@ def api_update_post(post_pk):
         cursor.execute(q, (post_message, new_image_path, post_pk))
         db.commit()
         
+        # Fetch the updated post with all necessary data for rendering
+        q = """
+            SELECT posts.*, users.user_username, users.user_name, users.user_avatar 
+            FROM posts 
+            JOIN users ON posts.post_user_fk = users.user_pk 
+            WHERE posts.post_pk = %s
+        """
+        cursor.execute(q, (post_pk,))
+        updated_post = cursor.fetchone()
+        
+        # Render the updated post card
+        updated_post_html = render_template("___post_card.html", post=updated_post, user=user)
+        
         toast_ok = render_template("___toast_ok.html", message="Post updated successfully!")
         return f"""
-            <browser mix-bottom="#toast">{toast_ok}</browser>
-            <browser mix-redirect="/home"></browser>
+            <browser mix-update="#toast">{toast_ok}</browser>
+            <browser mix-replace="#post_{post_pk}">{updated_post_html}</browser>
+            <browser>closeEditModal()</browser>
         """
         
     except Exception as ex:
@@ -563,36 +577,6 @@ def api_update_profile():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
-
-
-# ##############################
-# @app.post("/api-search")
-# def api_search():
-#     try:
-#         # TODO: The input search_for must be validated
-#         search_for = request.form.get("search_for", "")
-#         if not search_for:
-#             return """
-#             <browser mix-remove="#search_results"></browser>
-#             """
-#         part_of_query = f"%{search_for}%"
-#         ic(search_for)
-#         db, cursor = x.db()
-#         q = "SELECT * FROM users WHERE user_username LIKE %s"
-#         cursor.execute(q, (part_of_query,))
-#         users = cursor.fetchall()
-#         orange_box = render_template("_orange_box.html", users=users)
-#         return f"""
-#             <browser mix-remove="#search_results"></browser>
-#             <browser mix-bottom="#search_form">{orange_box}</browser>
-#         """
-#     except Exception as ex:
-#         ic(ex)
-#         return str(ex)
-#     finally:
-#         if "cursor" in locals(): cursor.close()
-#         if "db" in locals(): db.close()
-
 
 ##############################
 @app.post("/api-search")
