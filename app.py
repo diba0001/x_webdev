@@ -230,6 +230,7 @@ def home():
         # Convert 1/0 to Boolean for Jinja
         for suggestion in suggestions:
             suggestion['is_followed_by_user'] = True if suggestion['is_followed_by_user'] > 0 else False
+            suggestion.pop("user_password", None)
         
         # Following query to get users that the current user is following
         q = """
@@ -246,6 +247,7 @@ def home():
          # Convert 1/0 to Boolean for Jinja
         for follow in following:
             follow['is_followed_by_user'] = True if follow['is_followed_by_user'] > 0 else False
+            follow.pop("user_password", None)
 
         lan = session["user"]["user_language"]
 
