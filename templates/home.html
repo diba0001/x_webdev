@@ -48,7 +48,7 @@
                 <li><a href="#"><i class="fa-regular fa-bookmark"></i><span>{{ x.lans("bookmarks") }}</span></a></li>
                 <li><a href="#"><i class="fa-solid fa-briefcase"></i><span>{{ x.lans("jobs") }}</span></a></li>
                 <li><a href="#"><i class="fa-solid fa-users"></i><span>{{ x.lans("communities") }}</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-star"></i><span>{{ x.lans("premium") }}</span></a></li>
+                <li><a href="#"><i class="fa-solid fa-star"></i><span>Premium</span></a></li>
 
                 {% if user.user_is_admin %}
                 <li>
@@ -75,20 +75,30 @@
 
             <button class="post-btn">{{ x.lans("post") }}</button>
 
-            {% include "___nav_profile_tag.html" %}
+            <div id="profile_tag">
+                <img src="{{ url_for('static', filename='images/avatar_1.jpg') }}" alt="Profile">
+                <div>
+                    <div class="name">
+                        {{ user.user_first_name }}
+                    </div>
+                    <div class="handle">
+                        @{{ user.user_username }}
+                    </div>
+                </div>
+                <i class="fa-solid fa-ellipsis option"></i>
+            </div>
         </nav>
 
         <main class="px-4 h-full">
-
             {% include "_home_comp.html" %}
         </main>
 
         <aside>
             <form id="search_form" class="p-relative">
                 <!-- <input mix-post="/api-search" mix-input mix-delay="300" name="search_for" type="text" placeholder="Search Twitter"> -->
-                <input id="txt_search_for" name="search_for" type="text" placeholder="Search Twitter"
+                <input id="txt_search_for" name="search_for" type="text" placeholder="{{ x.lans('search_x') }}"
                     oninput="get_search_results('/api-search', 'post', '#search_form', 'parse_search_results')">
-                <button class="cursor-pointer">Search</button>
+                <button class="cursor-pointer">{{ x.lans("search") }}</button>
 
                 <div id="search_results" class="
                 d-none
@@ -100,7 +110,7 @@
             <div class="border-1 border-c-gray:+50 rounded-md pa-3">
                 <h2 class="text-120 text-c-black text-w-bold">{{ x.lans("what_is_happening_now") }}</h2>
                 <div class="">
-                    {% for trend in trends: %}
+                    {% for trend in trends %}
                     {% include "_trend.html" %}
                     {% endfor %}
                     <button class="text-c-tealblue text-90">{{ x.lans("more_news") }} </button>

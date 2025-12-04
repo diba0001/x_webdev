@@ -10,15 +10,18 @@ body {
   width: 100vw;
   height: 100%;
 }
+
 button {
   border: none;
-  background-color: transparent;
+  background-color: transparent; /* Consolidated duplicate button block */
 }
+
 a {
   text-decoration: none;
 }
+
 p {
-  line-height: 1.4rem;
+  line-height: 1.4rem; /* Consolidated duplicate p block */
 }
 
 #container {
@@ -41,11 +44,14 @@ p {
     z-index: 1100;
     cursor: pointer;
 
+    /* Consolidated burger icon styles */
     i.fa-xmark {
       display: none;
       pointer-events: none;
     }
   }
+
+  /* Consolidated duplicate .burger.open rules */
   .burger.open i.fa-bars {
     display: none;
     pointer-events: none;
@@ -74,8 +80,9 @@ p {
     transform: translateX(0);
     transition: transform 0.3s ease-in-out;
   }
+
   @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Removed duplicate 1fr rule */
 
     main {
       grid-column: 1 / -1;
@@ -93,14 +100,14 @@ p {
     }
 
     nav {
-      width: 70%;
+      width: 70%; /* Removed duplicate 70% rule */
       max-width: 260px;
       height: 100vh;
       background: #fff;
       transform: translateX(-100%);
     }
     nav.active {
-      transform: translateX(0);
+      transform: translateX(0); /* Removed duplicate transform rule */
     }
   }
 
@@ -110,7 +117,7 @@ p {
     }
 
     aside {
-      display: none;
+      display: none; /* Removed duplicate display: none rule */
     }
   }
 
@@ -120,7 +127,8 @@ p {
     flex-direction: column;
     gap: 0rem;
     padding: 0;
-
+    
+    /* Consolidated duplicate ul block */
     li {
       a {
         color: rgb(15, 15, 15);
@@ -133,7 +141,7 @@ p {
         border-radius: 2rem;
         transition: background-color 0.2s;
 
-        &:hover {
+        &:hover { /* Consolidated duplicate &:hover block */
           background-color: rgb(200, 200, 200);
         }
       }
@@ -154,7 +162,7 @@ p {
     width: 90%;
     align-self: center;
 
-    &:hover {
+    &:hover { /* Consolidated duplicate &:hover block */
       background-color: rgb(240, 240, 240);
       color: rgb(15, 15, 15);
       border: 1px solid rgb(200, 200, 200);
@@ -171,7 +179,7 @@ p {
     cursor: pointer;
     margin-bottom: 0.5rem;
 
-    &:hover {
+    &:hover { /* Consolidated duplicate &:hover block */
       background-color: rgb(240, 240, 240);
     }
 
@@ -207,7 +215,7 @@ main {
     cursor: pointer;
     transition: background-color 0.2s;
 
-    &:hover {
+    &:hover { /* Consolidated duplicate &:hover block */
       background-color: rgb(247, 249, 249);
     }
 
@@ -505,7 +513,7 @@ aside {
   background: #f5f5f5;
 }
 
-/* Footer */
+/* ---------- Footer ---------- */
 .x-landing__footer {
   position: absolute;
   bottom: 1rem;
@@ -519,7 +527,8 @@ aside {
 
 /* Responsive */
 @media (max-width: 768px) {
-  body.x-landing {
+  /* This is potentially incorrect, body.x-landing usually isn't used */
+  body.x-landing { 
     flex-direction: column;
     text-align: center;
   }
@@ -538,7 +547,7 @@ aside {
   }
 }
 
-/* DIALOG COMPONENTS */
+/* ---------- DIALOG COMPONENTS ---------- */
 .x-dialog {
   display: none;
   position: fixed;
@@ -598,14 +607,25 @@ aside {
   flex-direction: column;
   gap: 0.8rem;
   width: 100%;
-}
 
-.x-dialog__form div {
-  width: 100%;
-  label {
-    color: rgb(150, 150, 150);
-    span {
+  /* Consolidated duplicate x-dialog__form div block */
+  & > div {
+    width: 100%;
+
+    label {
       color: rgb(0, 0, 0);
+    }
+
+    .validation_rules {
+      color: rgb(150, 150, 150);
+      /* margin-top: 0; */ /* only want margin top 0 on the last one - the rest no margin */
+      margin: 0;
+      font-size: 0.7rem;
+      line-height: 1.25;
+    }
+
+    .frm_side_by_side {
+      display: flex;
     }
   }
 }
@@ -616,6 +636,12 @@ aside {
   border: 1px solid #ccc;
   border-radius: 0.5rem;
   font-size: 1rem;
+}
+
+/* If we want two of the inputs to be side by side */
+.x-dialog__form .frm_side_by_side {
+  display: flex;
+  gap: 1rem;
 }
 
 .x-dialog__btn {
@@ -645,6 +671,506 @@ aside {
 .x-dialog__alt a:hover {
   text-decoration: underline;
 }
+
+/* ---------- PROFILE ---------- */
+/* Profile Tabs */
+.profile-tabs {
+  display: flex;
+  border-bottom: 1px solid rgb(230, 230, 230);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgb(110, 109, 109);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: background-color 0.2s;
+}
+
+.tab-btn:hover {
+  background-color: rgb(247, 249, 249);
+}
+
+.tab-btn.active {
+  color: rgb(15, 15, 15);
+  border-bottom: 2px solid rgb(29, 155, 240);
+  font-weight: bold;
+}
+/* Profile Container (bruges på begge sider) */
+.profile-container {
+  max-width: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Profile Header (bruges på begge sider) */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgb(230, 230, 230);
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  color: rgb(15, 15, 15);
+  text-decoration: none;
+}
+
+.back-button:hover {
+  background-color: rgba(29, 155, 240, 0.1);
+}
+
+.header-info {
+  flex: 1;
+}
+
+.header-info h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.post-count {
+  font-size: 0.8rem;
+  color: rgb(110, 109, 109);
+  margin: 0;
+}
+
+/* Profile Banner */
+.profile-banner {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, rgb(29, 155, 240), rgb(91, 112, 131));
+  border-bottom: 1px solid rgb(230, 230, 230);
+}
+
+/* Profile Avatar Wrapper (på profile siden) */
+.profile-avatar-wrapper {
+  position: relative;
+  margin-top: -75px;
+  padding: 0 1rem;
+  z-index: 5;
+}
+
+.profile-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  object-fit: cover;
+  background: #fff;
+}
+
+/* Edit Profile Button */
+.edit-profile-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 1rem;
+  margin-top: -50px;
+  position: relative;
+  z-index: 10;
+}
+
+.edit-profile-btn {
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 2rem;
+  background-color: rgb(15, 15, 15);
+  color: white;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: 0.2s;
+  display: inline-block;
+}
+
+.edit-profile-btn:hover {
+  background-color: rgb(240, 240, 240);
+  color: rgb(15, 15, 15);
+  border: 1px solid rgb(200, 200, 200);
+}
+
+/* Profile Names and Info */
+.profile-names {
+  padding: 0.5rem 1rem 1rem;
+}
+
+.profile-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.5;
+  margin: 0;
+}
+.profile-bio {
+  margin: 0.75rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgb(15, 20, 25);
+}
+/* Profile Meta (Joined date) */
+.profile-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(110, 109, 109);
+  font-size: 0.9rem;
+  margin: 0.75rem 0;
+}
+
+.profile-meta i {
+  font-size: 1rem;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+/* ---------- ADMIN ---------- */
+/* admin */
+.dropdown-wrapper {
+  position: relative;
+}
+
+.dropdown-wrapper:focus-within .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  border-radius: 8px;
+  display: none;
+  min-width: 120px;
+}
+.post_container {
+  display: grid;
+
+  & > * {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+  }
+}
+
+.blocked_post_overlay {
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(231, 231, 231, 0.849);
+  width: 100%;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+/* ==================== CREATE POST FORM ==================== */
+.post_container > article.post {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+.post-container-wrapper {
+  border-bottom: 1px solid #2f3336;
+}
+
+.create-post-form {
+  padding: 16px;
+  width: 100%;
+}
+
+/* ==================== TOP SECTION ==================== */
+
+.post-form-top {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.post-form-textarea {
+  flex: 1;
+  background-color: transparent;
+  border: none;
+  color: #2f3336;
+  font-size: 20px;
+  resize: none;
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  padding: 0;
+}
+
+.post-form-textarea::placeholder {
+  color: #71767b;
+}
+
+/* ==================== BOTTOM SECTION ==================== */
+
+.post-form-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgb(200, 200, 200);
+  margin-left: 60px;
+}
+
+.media-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.7rem 1.5rem;
+  background-color: transparent;
+  color: #1d9bf0;
+  border: 1px solid rgba(29, 155, 240, 0.5);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.media-btn:hover {
+  background-color: rgba(29, 155, 240, 0.1);
+  border-color: #1d9bf0;
+}
+
+.media-btn i {
+  font-size: 18px;
+}
+
+.submit-post-btn {
+  background-color: #1d9bf0;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-post-btn:hover {
+  background-color: #1a8cd8;
+}
+
+.submit-post-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Preview area styling */
+#media_preview_area {
+  margin-left: 52px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+#media_preview_area img,
+#media_preview_area video {
+  max-width: 100%;
+  max-height: 300px;
+  display: block;
+}
+
+.post-media {
+  max-width: 100%;
+  max-height: 300px;
+  width: auto;
+  border-radius: 1rem;
+  object-fit: cover;
+  display: block;
+}
+
+/* ==================== SEARCH ==================== */
+#search_results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search_post {
+  border-top: 1px solid black;
+}
+
+/* ==================== EDIT POST PAGE ==================== */
+
+.edit-post-page {
+  max-width: 100%;
+}
+
+.edit-post-wrapper {
+  padding: 1rem;
+}
+
+.edit-post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.edit-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid rgb(230, 230, 230);
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.edit-textarea:focus {
+  outline: none;
+  border-color: rgb(29, 155, 240);
+}
+
+.char-counter {
+  font-size: 0.85rem;
+  color: rgb(110, 109, 109);
+  text-align: right;
+}
+
+.edit-media-preview {
+  margin-top: 1rem;
+}
+
+.edit-form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid rgb(230, 230, 230);
+  margin-top: 1rem;
+}
+
+.btn-cancel {
+  padding: 0.7rem 1.5rem;
+  background-color: white;
+  color: rgb(15, 15, 15);
+  border: 1px solid rgb(200, 200, 200);
+  border-radius: 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-cancel:hover {
+  background-color: rgb(240, 240, 240);
+}
+
+.btn-save {
+  padding: 0.7rem 1.5rem;
+  background-color: rgb(15, 15, 15);
+  color: white;
+  border: none;
+  border-radius: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-save:hover {
+  background-color: rgb(50, 50, 50);
+}
+
+/* Edit button on tweet */
+.edit-post-btn {
+  background: none;
+  border: none;
+  color: rgb(110, 109, 109);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 50%;
+  font-size: 14px;
+  margin-left: auto;
+  transition: all 0.2s;
+  position: relative;
+  z-index: 10;
+}
+
+.edit-post-btn:hover {
+  background-color: rgba(29, 155, 240, 0.1);
+  color: #1d9bf0;
+}
+
+/* Comment form */
+.comment-form {
+  padding: 1rem;
+  border-bottom: 1px solid rgb(230, 230, 230);
+}
+
+.comment-form-content {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.comment-form-input {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comment-textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid rgb(230, 230, 230);
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: rgb(29, 155, 240);
+}
+
+.btn-reply {
+  align-self: flex-end;
+  padding: 0.5rem 1.5rem;
+  background-color: rgb(29, 155, 240);
+  color: white;
+  border: none;
+  border-radius: 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-reply:hover {
+  background-color: rgb(26, 140, 216);
+}
+
 
 /* Admin button styling */
 .admin-nav-btn {

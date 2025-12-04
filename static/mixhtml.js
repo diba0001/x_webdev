@@ -365,6 +365,7 @@ function mix_convert(){
                                 [mix-delete], [mix-ttl], [mix-fade-out], [mix-fade-in]`).forEach( el => {
         try{
             let el_event = "onclick"
+            let set_event = true
             if( el.tagName === "FORM" ){ el_event = "onsubmit" }
             if( el.hasAttribute("mix-focus") ){ el_event = "onfocus" }
             if( el.hasAttribute("mix-blur") ){ el_event = "onblur" }
@@ -374,6 +375,7 @@ function mix_convert(){
             if( el.hasAttribute("mix-url") && ! el.hasAttribute("mix-ttl") ){ el.setAttribute("mix-ttl", "0") }
         
             if(el.hasAttribute("mix-fade-out")){ 
+                set_event = false
                 let ttl = el.getAttribute("mix-fade-out")
                 if( ! /^[0-9]\d*$/.test(ttl) ){
                     ttl = 2000
@@ -384,6 +386,7 @@ function mix_convert(){
             }
 
             if(el.hasAttribute("mix-fade-in")){ 
+                set_event = false
                 let ttl = el.getAttribute("mix-fade-in")
                 if( ! /^[0-9]\d*$/.test(ttl) ){
                     ttl = 2000
@@ -412,8 +415,11 @@ function mix_convert(){
                     }
                     return
                 }                    
-            }           
-            el.setAttribute(el_event, "mixhtml(); return false")                              
+            }  
+            if ( set_event ){ 
+                el.setAttribute(el_event, "mixhtml(); return false")
+            }         
+                                          
         }catch(error){ if(DISPLAY_ERRORS){ console.log(error) }}
     })
 }

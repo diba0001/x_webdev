@@ -1,10 +1,4 @@
-<div class="d-flex flex-row ma-2">
-    <div class="w-auto">
-        <img src="/{{ user.user_avatar_path if user.user_avatar_path else 'static/images/avatars/unknown.jpg' }}"
-        class="w-8 h-8 rounded-full obj-f-cover" alt="Profile Picture">
-    </div>
-    {% include "___post_container.html" %}
-</div>
+{% include "___post_container.html" %}
 
 <div id="posts">
 

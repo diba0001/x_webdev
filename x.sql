@@ -2,10 +2,10 @@
 -- version 5.2.2
 -- https://www.phpmyadmin.net/
 --
--- Host: mariadb
--- Generation Time: Dec 04, 2025 at 09:03 AM
--- Server version: 10.6.20-MariaDB-ubu2004
--- PHP Version: 8.2.27
+-- Vært: mariadb
+-- Genereringstid: 04. 12 2025 kl. 09:02:21
+-- Serverversion: 10.6.20-MariaDB-ubu2004
+-- PHP-version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -44,26 +44,7 @@ INSERT INTO `follows` (`follow_follower_fk`, `follow_followed_fk`, `follow_times
 -- --------------------------------------------------------
 
 --
--- Table structure for table `likes`
---
-
-CREATE TABLE `likes` (
-  `like_user_fk` char(32) NOT NULL,
-  `like_post_fk` char(32) NOT NULL,
-  `like_timestamp` bigint(20) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `likes`
---
-
-INSERT INTO `likes` (`like_user_fk`, `like_post_fk`, `like_timestamp`) VALUES
-('9860c6174a3141c5b1e7c8b3638b2f2b', '299323cf81924589b0de265e715a1f9e', 1763551080);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `posts`
+-- Struktur-dump for tabellen `posts`
 --
 
 CREATE TABLE `posts` (
@@ -71,26 +52,41 @@ CREATE TABLE `posts` (
   `post_user_fk` char(32) NOT NULL,
   `post_message` varchar(280) NOT NULL,
   `post_total_likes` bigint(20) UNSIGNED NOT NULL,
-  `post_image_path` varchar(255) NOT NULL,
-  `post_blocked_at` bigint(20) UNSIGNED NOT NULL,
-  `post_created_at` datetime NOT NULL DEFAULT current_timestamp()
+  `post_media_path` varchar(255) NOT NULL,
+  `post_created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `post_deleted_at` bigint(20) NOT NULL,
+  `post_updated_at` bigint(20) NOT NULL,
+  `post_is_blocked` tinyint(4) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `posts`
+-- Data dump for tabellen `posts`
 --
 
-INSERT INTO `posts` (`post_pk`, `post_user_fk`, `post_message`, `post_total_likes`, `post_image_path`, `post_blocked_at`, `post_created_at`) VALUES
-('28dd4c1671634d73acd29a0ab109bef1', '805a39cd8c854ee8a83555a308645bf5', 'My first super life !', 1, 'post_3.jpg', 0, '2025-12-03 11:41:46'),
-('299323cf81924589b0de265e715a1f9e', '225a9fc15b8f409aa5c8ee7eafee516b', 'test3', 1, 'post_1.jpg', 0, '2025-12-03 11:41:46'),
-('7d6f40e626c54efaa32494bce5f739d7', '88a93bb5267e443eb0047f421a7a2f34', 'test', 1, 'post_2.jpg', 0, '2025-12-03 11:41:46'),
-('99fefea24ea5419da19ed1f8cf8e9499', '225a9fc15b8f409aa5c8ee7eafee516b', 'wow', 0, 'post_1.jpg', 1764838458, '2025-12-03 11:41:46'),
-('bcaa6df8880e411a9c25deaafae2314a', '225a9fc15b8f409aa5c8ee7eafee516b', 'test4', 2, '', 0, '2025-12-03 11:41:46');
+INSERT INTO `posts` (`post_pk`, `post_user_fk`, `post_message`, `post_total_likes`, `post_media_path`, `post_created_at`, `post_deleted_at`, `post_updated_at`, `post_is_blocked`) VALUES
+('00aedfa5929745498ea613c43954e866', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'Can I delete this picture?', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('1030d251278040a7a06c2e25218f1bf2', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'A browsing test', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('1e5ecc804e1f46bc8e723437bf4bfc4b', '225a9fc15b8f409aa5c8ee7eafee516b', 'And this just works! Or, does it? (I have edited this, right?!)', 1, '', '2025-11-19 15:37:06', 0, 1764838774, 0),
+('28dd4c1671634d73acd29a0ab109bef1', '805a39cd8c854ee8a83555a308645bf5', 'My first super life !', 1, 'post_3.jpg', '2025-11-19 15:37:06', 0, 0, 0),
+('32cae9be7eb443648be045dc8d0627f0', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'I am at class', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('39e97f6c17354b59888518ea56501e29', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'This is a picture of Arturos task for us', 0, 'ac59dc424bbe4a41a0c43c02a88b332d_GetImage.ashx-2.png', '2025-11-19 15:37:06', 0, 0, 0),
+('56b89bdf56a64f95b82b76aebbb062b8', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'hi world', 0, '74bed71a30624b4b8ac96d88bb58008a_wdc_black.png', '2025-11-19 15:37:06', 0, 0, 0),
+('7c2e073e08154a84b4d0fdd2659221fc', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'Now, is this picture visible?', 0, 'b4e0588617fc4ba2ac183211d0882e02_HK-ad.webp', '2025-11-19 15:37:06', 0, 0, 0),
+('7c49e2bf4ad74fb3a2b7f85708470a1f', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'Can you see this post?', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('7d6f40e626c54efaa32494bce5f739d7', '88a93bb5267e443eb0047f421a7a2f34', 'test', 1, 'post_2.jpg', '2025-11-19 15:37:06', 0, 0, 0),
+('c0ca62e423b347119061b54aac82998e', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'hej verden', 0, '0ba7d30b6aae4faca258fe312373c8d2_wdc_black.png', '2025-11-19 15:37:06', 0, 0, 0),
+('c7ecd2a9b3cb4c09924c578b6cf0c995', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'Okay, can we make 2 posts in a row?', 0, '6c4779307fba45bba819cae679ff4477_therese-samvirke-beskaret.jpg', '2025-11-19 15:37:06', 0, 0, 0),
+('d0ab2ed244824cffb3474727d5091fd8', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'What date and time did I upload this?', 0, 'db96c78162be4251a4eca17652f96e71_r-whiskey-ad-samvirke.jpg', '2025-11-24 10:36:22', 0, 0, 0),
+('e40967338e8c466985dbde4e3f9c712a', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'Does it work?', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('e5287e15b19d4e87b192f08642cfa659', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'hi', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('efaf8b6f98be4a7b8cc7a75d0f83578c', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'test', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('f29a8c8259c449a28773153bc0b2d0af', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'This is a post I want to delete', 0, '', '2025-11-19 15:37:06', 0, 0, 0),
+('ff4053ee078c4b3d84d00f7ddd171058', '4d2fcca97ea24b3d9f91e986d0c7f42a', 'Does it work?', 0, '', '2025-11-19 15:37:06', 0, 0, 0);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `trends`
+-- Struktur-dump for tabellen `trends`
 --
 
 CREATE TABLE `trends` (
@@ -100,17 +96,19 @@ CREATE TABLE `trends` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `trends`
+-- Data dump for tabellen `trends`
 --
 
 INSERT INTO `trends` (`trend_pk`, `trend_title`, `trend_message`) VALUES
-('6543c995d1af4ebcbd5280a4afaa1e2c', 'Politics are rotten', 'Everyone talks and only a few try to do something'),
-('8343c995d1af4ebcbd5280a6afaa1e2d', 'New rocket to the moon', 'A new rocket has been sent towards the moon, but id didn\'t make it');
+('6543c995d1af4ebcbd5280a4afaa1e2c', 'Politics are rotten', 'Politicians talk, but do nothing'),
+('805a39cd8c854ee8a83555a308645bf5', 'UEFA CHL', 'Real Madrid leads the group'),
+('8343c995d1af4ebcbd5280a6afaa1e2d', 'New rocket to the moon', 'A new rocket has been sent to the moon'),
+('9860c6174a3141c5b1e7c8b3638b2f2b', 'War in Sudan', 'Ongoing war in South Sudan');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Struktur-dump for tabellen `users`
 --
 
 CREATE TABLE `users` (
@@ -129,7 +127,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `users`
+-- Data dump for tabellen `users`
 --
 
 INSERT INTO `users` (`user_pk`, `user_email`, `user_password`, `user_username`, `user_first_name`, `user_last_name`, `user_avatar_path`, `user_verification_key`, `user_verified_at`, `user_deleted_at`, `user_is_admin`, `user_blocked_at`) VALUES
@@ -141,7 +139,7 @@ INSERT INTO `users` (`user_pk`, `user_email`, `user_password`, `user_username`, 
 ('9860c6174a3141c5b1e7c8b3638b2f2b', 'maltheaaen@gmail.com', 'scrypt:32768:8:1$5NSH8Gsqi83lQV24$b61989755f5e00e7632463dee7b806b93acab7d4de36b6e32caf47a2fcef8bf23db0624a3767d5bae3ba40c77673171dad51a4b472e44a9463fc141a0b7f37bb', 'Malt', 'Malthe', '', 'static/images/avatars/avatar_5.jpg', '', 54654564, 0, 0, 0);
 
 --
--- Indexes for dumped tables
+-- Begrænsninger for dumpede tabeller
 --
 
 --
@@ -159,29 +157,29 @@ ALTER TABLE `likes`
   ADD KEY `like_post_fk` (`like_post_fk`);
 
 --
--- Indexes for table `posts`
+-- Indeks for tabel `posts`
 --
 ALTER TABLE `posts`
   ADD PRIMARY KEY (`post_pk`),
   ADD UNIQUE KEY `post_pk` (`post_pk`);
 
 --
--- Indexes for table `trends`
+-- Indeks for tabel `trends`
 --
 ALTER TABLE `trends`
+  ADD PRIMARY KEY (`trend_pk`),
   ADD UNIQUE KEY `trend_pk` (`trend_pk`);
 
 --
--- Indexes for table `users`
+-- Indeks for tabel `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_pk`),
-  ADD UNIQUE KEY `user_pk` (`user_pk`),
   ADD UNIQUE KEY `user_email` (`user_email`),
   ADD UNIQUE KEY `user_name` (`user_username`);
 
 --
--- Constraints for dumped tables
+-- Begrænsninger for dumpede tabeller
 --
 
 --
