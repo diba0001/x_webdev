@@ -71,7 +71,7 @@ CREATE TABLE `posts` (
   `post_user_fk` char(32) NOT NULL,
   `post_message` varchar(280) NOT NULL,
   `post_total_likes` bigint(20) UNSIGNED NOT NULL,
-  `post_image_path` varchar(255) NOT NULL,
+  `post_media_path` varchar(255) NOT NULL,
   `post_blocked_at` bigint(20) UNSIGNED NOT NULL,
   `post_created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -80,7 +80,7 @@ CREATE TABLE `posts` (
 -- Dumping data for table `posts`
 --
 
-INSERT INTO `posts` (`post_pk`, `post_user_fk`, `post_message`, `post_total_likes`, `post_image_path`, `post_blocked_at`, `post_created_at`) VALUES
+INSERT INTO `posts` (`post_pk`, `post_user_fk`, `post_message`, `post_total_likes`, `post_media_path`, `post_blocked_at`, `post_created_at`) VALUES
 ('28dd4c1671634d73acd29a0ab109bef1', '805a39cd8c854ee8a83555a308645bf5', 'My first super life !', 1, 'post_3.jpg', 0, '2025-12-03 11:41:46'),
 ('299323cf81924589b0de265e715a1f9e', '225a9fc15b8f409aa5c8ee7eafee516b', 'test3', 1, 'post_1.jpg', 0, '2025-12-03 11:41:46'),
 ('7d6f40e626c54efaa32494bce5f739d7', '88a93bb5267e443eb0047f421a7a2f34', 'test', 1, 'post_2.jpg', 0, '2025-12-03 11:41:46'),

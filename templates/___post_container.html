@@ -1,8 +1,26 @@
-<form id="post_container" action="{{ url_for('api_create_post') }}" mix-post class="d-flex flex-col w-full ml-2">
-    <textarea name="post" placeholder="What is new ?" 
-    class="w-full outline-1 outline-s-solid outline-c-gray:+50 pa-2"></textarea>
-    <button mix-default="Post" mix-await="Posting ..." 
-    class="w-auto ml-auto mt-2 bg-c-black text-c-white py-2 px-12 rounded-xl">
-        Post
-    </button>
-</form>
+<div id="post_container" data-remove-text="{{ x.lans('remove') }}" data-add-photo-text="{{ x.lans('add_media') }}">
+    <!-- Question: Multipart to add media? -->
+    <form mix-post="/api-create-post" enctype="multipart/form-data" class="create-post-form">
+        <div class="post-form-top">
+            <img src="{{ url_for('static', filename='images/'~(user.user_avatar_path if user.user_avatar_path else 'unknown.jpg')) }}"
+                alt="Profile Picture" class="w-8 h-8 rounded-full">
+
+            <textarea name="post" placeholder="{{ x.lans('what_is_happening_now')}}?" class="post-form-textarea"
+                rows="3"></textarea>
+        </div>
+
+        <!-- PREVIEWer -->
+        <div id="media_preview_area"></div>
+
+        <!-- Buttons -->
+        <div class="post-form-bottom">
+            <input type="file" id="post_media_input" name="post_media" accept="image/*,video/*" style="display: none;">
+
+            <label for="post_media_input" class="media-btn">
+                <i class="fa-regular fa-image"></i> {{ x.lans("add_media") }}
+            </label>
+
+            <button type="submit" class="submit-post-btn">{{ x.lans("post") }}</button>
+        </div>
+    </form>
+</div>
