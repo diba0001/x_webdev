@@ -141,20 +141,23 @@ def signup(lan = "english"):
             user_verification_key = uuid.uuid4().hex
             user_verified_at = 0
             user_deleted_at = 0
+            user_is_admin = 0
+            user_blocked_at = 0
 
             user_hashed_password = generate_password_hash(user_password)
+            verification_link = f"http://127.0.0.1:800/verify-account?key={user_verification_key}"
 
             # Connect to the database
-            q = "INSERT INTO users VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            q = "INSERT INTO users VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             db, cursor = x.db()
             cursor.execute(q, (user_pk, user_email, user_hashed_password, user_username, 
-            user_first_name, user_last_name, user_avatar_path, user_verification_key, user_verified_at, user_deleted_at))
+            user_first_name, user_last_name, user_avatar_path, user_verification_key, user_verified_at, user_deleted_at, user_is_admin, user_blocked_at))
             db.commit()
 
             # send verification email
-            email_verify_account = render_template("_email_verify_account.html", user_verification_key=user_verification_key)
+            email_verify_account = render_template("_email_verify_account.html", verification_link=verification_link, lans=lan)
             # ic(email_verify_account)
-            x.send_email(user_email, "Verify your account", email_verify_account)
+            x.send_email(user_email, x.lans('verify_your_account'), email_verify_account)
 
             return f"""<mixhtml mix-redirect="{ url_for('login') }"></mixhtml>""", 400
         except Exception as ex:

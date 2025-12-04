@@ -254,6 +254,11 @@
         "danish": "Søg på sport, politik, personer...",
         "spanish": "Busca por deporte, política, personas…"
     },
+    "verify_your_account": {
+        "english": "Verify your account",
+        "danish": "Verificer din konto",
+        "spanish": "Verificar tu cuenta"
+    },
     "welcome_to_x": {
         "english": "Welcome to X",
         "danish": "Velkommen til X",
