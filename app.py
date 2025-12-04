@@ -595,17 +595,18 @@ def api_admin_block_post():
                 """,
                 (post_pk,)
             )
-            row = cursor.fetchone()
-            if row and row.get("user_email"):
+            post_row = cursor.fetchone()
+            if post_row and post_row.get("user_email"):
+                blocked_email = post_row["user_email"]
                 subject = "Your post has been blocked"
                 body = f"""
-                <p>Hello @{row.get('user_username', '')},</p>
+                <p>Hello @{post_row.get('user_username', '')},</p>
                 <p>Your post has been blocked by an administrator.</p>
-                <p><strong>Message:</strong><br>{row.get('post_message', '')}</p>
-                <p><strong>Posted at:</strong> {row.get('post_created_at', '')}</p>
+                <p><strong>Message:</strong><br>{post_row.get('post_message', '')}</p>
+                <p><strong>Posted at:</strong> {post_row.get('post_created_at', '')}</p>
                 <p>If you believe this is a mistake, please contact support.</p>
                 """
-                x.send_email(row["user_email"], subject, body)
+                x.send_email(blocked_email, subject, body)
         except Exception as email_ex:
             ic(f"Failed to send post blocked email: {email_ex}")
         
@@ -659,17 +660,18 @@ def api_admin_unblock_post():
                 """,
                 (post_pk,)
             )
-            row = cursor.fetchone()
-            if row and row.get("user_email"):
+            post_row = cursor.fetchone()
+            if post_row and post_row.get("user_email"):
+                unblocked_email = post_row["user_email"]
                 subject = "Your post has been unblocked"
                 body = f"""
-                <p>Hello @{row.get('user_username', '')},</p>
+                <p>Hello @{post_row.get('user_username', '')},</p>
                 <p>Your post has been unblocked by an administrator.</p>
-                <p><strong>Message:</strong><br>{row.get('post_message', '')}</p>
-                <p><strong>Posted at:</strong> {row.get('post_created_at', '')}</p>
+                <p><strong>Message:</strong><br>{post_row.get('post_message', '')}</p>
+                <p><strong>Posted at:</strong> {post_row.get('post_created_at', '')}</p>
                 <p>You can now view it again.</p>
                 """
-                x.send_email(row["user_email"], subject, body)
+                x.send_email(unblocked_email, subject, body)
         except Exception as email_ex:
             ic(f"Failed to send post unblocked email: {email_ex}")
 
