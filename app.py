@@ -564,74 +564,120 @@ def edit_post(post_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
-############################## 
 @app.route("/api-update-post/<post_pk>", methods=["POST"])
 def api_update_post(post_pk):
     try:
-        # Brug session
-        user = session.get("user", "")
-        if not user:
-            toast_error = render_template("___toast_error.html", message="You must be logged in")
-            return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 401
-        # Valider post_pk
-        post_pk = x.validate_uuid4_without_dashes(post_pk)
-        # Get and validate new post message
-        post_message = request.form.get("post_message", "").strip()
-        if not post_message:
-            toast_error = render_template("___toast_error.html", message="Post cannot be empty")
-            return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 400
-        # Validate post length
-        post_message = x.validate_post(post_message)
-        # Update timestamp
-        post_updated_at = int(time.time())
-        # Update database
+        user = session.get("user")
+        if not user: 
+            return "invalid user", 400
+        
+        post_message = x.validate_post(request.form.get("post_message", ""))
+        remove_media = request.form.get("remove_media", "0")
+        
         db, cursor = x.db()
+        
+        # Get current post
+        cursor.execute("SELECT post_media_path FROM posts WHERE post_pk = %s AND post_user_fk = %s", 
+                      (post_pk, user["user_pk"]))
+        current_post = cursor.fetchone()
+        if not current_post:
+            return "Post not found", 404
+            
+        post_media_path = current_post["post_media_path"]
+        
+        # Handle media removal
+        if remove_media == "1" and post_media_path:
+            # Delete old file
+            old_file = os.path.join('static', post_media_path)
+            if os.path.exists(old_file):
+                os.remove(old_file)
+            post_media_path = ""
+        
+        # Handle new media upload
+        if 'post_media' in request.files:
+            file = request.files['post_media']
+            if file and file.filename:
+                # Delete old file if exists
+                if post_media_path:
+                    old_file = os.path.join('static', post_media_path)
+                    if os.path.exists(old_file):
+                        os.remove(old_file)
+                
+                # Save new file
+                file.seek(0, 2)
+                size = file.tell()
+                file.seek(0)
+                
+                if size > 5 * 1024 * 1024:  # 5MB
+                    raise Exception("x-error file size too large")
+                
+                allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+                
+                if file_ext not in allowed_extensions:
+                    raise Exception("x-error file invalid type")
+                
+                from werkzeug.utils import secure_filename
+                unique_filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+                
+                upload_dir = 'static/images'
+                if not os.path.exists(upload_dir):
+                    os.makedirs(upload_dir)
+                
+                file_path = os.path.join(upload_dir, unique_filename)
+                file.save(file_path)
+                post_media_path = f"images/{unique_filename}"
+        
+        # Update database
         q = """UPDATE posts 
-               SET post_message = %s, post_updated_at = %s 
-               WHERE post_pk = %s AND post_user_fk = %s AND post_deleted_at = 0"""
-        cursor.execute(q, (post_message, post_updated_at, post_pk, user["user_pk"]))
+               SET post_message = %s, post_media_path = %s, post_updated_at = %s 
+               WHERE post_pk = %s AND post_user_fk = %s"""
+        cursor.execute(q, (post_message, post_media_path, int(time.time()), post_pk, user["user_pk"]))
         db.commit()
-        # Check if update was successful
-        if cursor.rowcount != 1:
-            raise Exception("Could not update post", 400)
-        # Fetch updated tweets
-        q = """SELECT 
-                users.*,
-                posts.*,
-                CASE WHEN likes.like_user_fk IS NOT NULL THEN 1 ELSE 0 END AS liked_by_user
-            FROM posts
-            JOIN users ON users.user_pk = posts.post_user_fk
-            LEFT JOIN likes ON likes.like_post_fk = posts.post_pk AND likes.like_user_fk = %s
-            WHERE posts.post_deleted_at = 0
-            ORDER BY posts.post_updated_at DESC, RAND()
-            LIMIT 5"""
-        cursor.execute(q, (user["user_pk"],))
-        tweets = cursor.fetchall()
-        # Send success response
+        
+        # Fetch updated post with user data
+        q = """SELECT * FROM posts 
+               JOIN users ON post_user_fk = user_pk 
+               WHERE post_pk = %s"""
+        cursor.execute(q, (post_pk,))
+        updated_post = cursor.fetchone()
+        
         toast_ok = render_template("___toast_ok.html", message="Post updated successfully!")
-        home_html = render_template("_home_comp.html", tweets=tweets)
+        html_post = render_template("_tweet.html", tweet=updated_post, user=user)
+        
         return f"""
-<browser mix-bottom="#toast">{toast_ok}</browser>
-<browser mix-update="main">{home_html}</browser>
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-replace="#post_container_{post_pk}">{html_post}</browser>
         """
+        
     except Exception as ex:
         ic(ex)
-        if "db" in locals():
+        if "db" in locals(): 
             db.rollback()
-        # User validation error
+        
+        # File upload errors
+        if "x-error file" in str(ex):
+            if "size too large" in str(ex):
+                toast_error = render_template("___toast_error.html", message="Image too large. Maximum 5MB.")
+            else:
+                toast_error = render_template("___toast_error.html", message="Invalid file type. Only images allowed.")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>"""
+        
+        # Post validation error
         if "x-error post" in str(ex):
-            toast_error = render_template("___toast_error.html", 
-                message=f"Post must be {x.POST_MIN_LEN} to {x.POST_MAX_LEN} characters")
-            return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 400
+            toast_error = render_template("___toast_error.html", message=f"Post - {x.POST_MIN_LEN} to {x.POST_MAX_LEN} characters")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>"""
+        
         # System error
-        toast_error = render_template("___toast_error.html", message="Could not update post")
+        toast_error = render_template("___toast_error.html", message="System under maintenance")
         return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 500
- 
+        
     finally:
-        if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()
-
-
+        if "cursor" in locals(): 
+            cursor.close()
+        if "db" in locals(): 
+            db.close()
+            
 ##############################
 @app.post("/api-search")
 def api_search():

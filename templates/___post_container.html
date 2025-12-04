@@ -1,15 +1,15 @@
-<div id="post_container">
-    <!-- Question: Multipart for at kunne tilføje media? -->
+<div id="post_container" data-remove-text="{{ x.lans('remove') }}" data-add-photo-text="{{ x.lans('add_media') }}">
+    <!-- Question: Multipart to add media? -->
     <form mix-post="/api-create-post" enctype="multipart/form-data" class="create-post-form">
         <div class="post-form-top">
             <img src="{{ url_for('static', filename='images/'~(user.user_avatar_path if user.user_avatar_path else 'unknown.jpg')) }}"
                 alt="Profile Picture" class="w-8 h-8 rounded-full">
 
-            <textarea name="post" placeholder="What's happening?" class="post-form-textarea" rows="3"></textarea>
-            <!-- TODO: Translate -->
+            <textarea name="post" placeholder="{{ x.lans('what_is_happening_now')}}?" class="post-form-textarea"
+                rows="3"></textarea>
         </div>
 
-        <!-- PREVIEW  -->
+        <!-- PREVIEWer -->
         <div id="media_preview_area"></div>
 
         <!-- Buttons -->
@@ -17,10 +17,10 @@
             <input type="file" id="post_media_input" name="post_media" accept="image/*,video/*" style="display: none;">
 
             <label for="post_media_input" class="media-btn">
-                <i class="fa-regular fa-image"></i> Add photo or video
-            </label> <!-- TODO: Translate -->
+                <i class="fa-regular fa-image"></i> {{ x.lans("add_media") }}
+            </label>
 
-            <button type="submit" class="submit-post-btn">Post</button> <!-- TODO: Translate -->
+            <button type="submit" class="submit-post-btn">{{ x.lans("post") }}</button>
         </div>
     </form>
 </div>

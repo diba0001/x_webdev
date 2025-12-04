@@ -10,7 +10,7 @@
         </div>
 
         <div class="edit-post-wrapper">
-            <form mix-post="/api-update-post/{{ post.post_pk }}" class="edit-post-form">
+            <form mix-post="/api-update-post/{{ post.post_pk }}" enctype="multipart/form-data" class="edit-post-form">
 
                 <div class="edit-form-group">
                     <textarea name="post_message" class="edit-textarea" rows="5"
@@ -18,21 +18,42 @@
                     <small class="char-counter">{{ post.post_message|length }}/250</small>
                 </div>
 
-                {% if post.post_media_path %}
-                <div class="edit-media-preview">
-                    {% set file_ext = post.post_media_path.split('.')[-1].lower() %}
+                <!-- Existing media preview -->
+                <div id="edit_media_preview_{{ post.post_pk }}">
+                    {% if post.post_media_path %}
+                    <div class="edit-media-preview">
+                        {% set file_ext = post.post_media_path.split('.')[-1].lower() %}
 
-                    {% if file_ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
-                    <img src="{{ url_for('static', filename=post.post_media_path) }}" alt="Post image"
-                        class="post-media">
-                    {% elif file_ext in ['mp4', 'mov', 'webm'] %}
-                    <video controls class="post-media">
-                        <source src="{{ url_for('static', filename=post.post_media_path) }}"
-                            type="video/{{ file_ext }}">
-                    </video>
+                        {% if file_ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+                        <img src="{{ url_for('static', filename=post.post_media_path) }}" alt="Post image"
+                            class="post-media">
+                        {% elif file_ext in ['mp4', 'mov', 'webm'] %}
+                        <video controls class="post-media">
+                            <source src="{{ url_for('static', filename=post.post_media_path) }}"
+                                type="video/{{ file_ext }}">
+                        </video>
+                        {% endif %}
+
+                        <button type="button" class="btn-cancel mt-4" onclick="removeEditMedia('{{ post.post_pk }}')">
+                            {{ x.lans("remove_media")}}
+                        </button>
+                        <input type="hidden" name="remove_media" id="remove_media_{{ post.post_pk }}" value="0">
+                    </div>
                     {% endif %}
                 </div>
-                {% endif %}
+
+                <!-- New media upload -->
+                <div class="edit-media-upload">
+                    <input type="file" id="edit_media_input_{{ post.post_pk }}" name="post_media"
+                        accept="image/*,video/*" style="display: none;">
+                    <label for="edit_media_input_{{ post.post_pk }}" class="media-btn">
+                        <i class="fa-regular fa-image"></i> {{ x.lans("change_media") if post.post_media_path else
+                        x.lans("add_media") }}
+                    </label>
+                </div>
+
+                <!-- New media preview area -->
+                <div id="new_media_preview_{{ post.post_pk }}"></div>
 
                 <div class="edit-form-actions">
                     <button type="button" mix-get="/home-comp" class="btn-cancel">
