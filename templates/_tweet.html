@@ -57,12 +57,12 @@
                 {% endif %}
                 {% endif %}
 
-                <div class="post-actions">
-                    <span class="action">
-                        <a href="">
-                            <i class="fa-regular fa-comment"></i> 12
-                        </a>
-                    </span>
+                <div id="post_actions_{{ tweet.post_pk }}" class="post-actions">
+
+                    {% set post_pk = tweet.post_pk %}
+                    {% set comments_count = tweet.post_total_comments %}
+
+                    {% include "___button_open_comments.html" with context %}
                     <span class="action"><i class="fa-solid fa-retweet"></i> 5</span>
                     <span class="action">
                         {% set post_pk = tweet.post_pk %}

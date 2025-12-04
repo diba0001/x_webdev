@@ -1,0 +1,12 @@
+<section id="comments_section_{{ post_pk }}" class="d-flex flex-col gap-3 pt-3">
+
+    {% for comment in comments %}
+    {% include "___comment.html" %}
+    {% else %}
+    <p id="no_comment_{{ post_pk }}" class="text-a-center">{{ x.lans('no_comment') }}</p>
+    {% endfor %}
+
+    {% include "___comment_container.html" %}
+
+
+</section>
