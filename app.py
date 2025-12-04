@@ -312,8 +312,8 @@ def home_comp():
         tweets = cursor.fetchall()
         # ic(tweets)
 
-        html = render_template("_home_comp.html", tweets=tweets)
-        return f"""<mixhtml mix-update="main">{ html }</mixhtml>"""
+        html = render_template("_home_comp.html", tweets=tweets, user=user)
+        return f"""<browser mix-update="main">{ html }</browser>"""
     except Exception as ex:
         ic(ex)
         return "error"
