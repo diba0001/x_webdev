@@ -1,27 +1,28 @@
 <h2 class="text-120 mb-2">{{x.lans("admin_users")}}</h2>
 {% for user in users %}
-  <div class="d-flex a-items-center j-content-between pa-2 border-b-1 border-c-gray:+20">
-    <div class="text-100">@{{ user.user_username }}</div>
-    <div id="admin_btn_{{ user.user_username }}">
-      {% if user.user_blocked_at %}
-        <form action="{{ url_for('api_admin_unblock_user') }}" mix-post class="d-flex a-items-center">
-          <input type="hidden" name="user_username" value="{{ user.user_username }}">
-          <input type="hidden" name="user_pk" value="{{ user.user_pk }}">
-          <button class="px-4 py-1 text-c-black bg-c-white rounded-lg" type="submit"
-                  style="border: 1px solid black; cursor: pointer;">{{ x.lans("admin_unblock") }}</button>
-        </form>
-      {% else %}
-        <form action="{{ url_for('api_admin_block_user') }}" mix-post class="d-flex a-items-center">
-          <input type="hidden" name="user_username" value="{{ user.user_username }}">
-          <input type="hidden" name="user_pk" value="{{ user.user_pk }}">
-          <button class="px-4 py-1 text-c-white bg-c-black rounded-lg"
-                  style="border: 1px solid black; cursor: pointer;" type="submit">
-            {{ x.lans("admin_block") }}
-          </button>
-        </form>
-      {% endif %}
-    </div>
+<div id="admin_user_{{ user.user_pk }}"
+  class="d-flex a-items-center j-content-between pa-2 border-b-1 border-c-gray:+20">
+  <div class="text-100">@{{ user.user_username }}</div>
+  <div id="admin_btn_{{ user.user_pk }}">
+    {% if user.user_blocked_at %}
+    <form action="{{ url_for('api_admin_unblock_user') }}" mix-post class="d-flex a-items-center">
+      <input type="hidden" name="user_username" value="{{ user.user_username }}">
+      <input type="hidden" name="user_pk" value="{{ user.user_pk }}">
+      <button class="px-4 py-1 text-c-black bg-c-white rounded-lg" type="submit"
+        style="border: 1px solid black; cursor: pointer;">{{ x.lans("admin_unblock") }}</button>
+    </form>
+    {% else %}
+    <form action="{{ url_for('api_admin_block_user') }}" mix-post class="d-flex a-items-center">
+      <input type="hidden" name="user_username" value="{{ user.user_username }}">
+      <input type="hidden" name="user_pk" value="{{ user.user_pk }}">
+      <button class="px-4 py-1 text-c-white bg-c-black rounded-lg" style="border: 1px solid black; cursor: pointer;"
+        type="submit">
+        {{ x.lans("admin_block") }}
+      </button>
+    </form>
+    {% endif %}
   </div>
+</div>
 {% else %}
 <p>{{ x.lans("admin_no_users") }}</p>
 {% endfor %}

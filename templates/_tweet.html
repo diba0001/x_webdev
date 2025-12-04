@@ -35,27 +35,11 @@
             <span class="action"><i class="fa-solid fa-share"></i></span>
 
             {% if user.user_is_admin %}
-            <div id="block-btn-{{ tweet.post_pk }}">
-                {% if tweet.post_blocked_at %}
-                <form mix-post="{{ url_for('api_admin_unblock_post') }}" mix-target="#block-btn-{{ tweet.post_pk }}"
-                    class="px-4 py-1 ma-0 bg-c-white rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center"
-                    style="border: 1px solid black;">
-                    <input type="hidden" name="post_pk" value="{{ tweet.post_pk }}">
-                    <button type="submit" class="text-c-black cursor-pointer">
-                        {{ x.lans("admin_unblock") }}
-                    </button>
-                </form>
-                {% else %}
-                <form mix-post="{{ url_for('api_admin_block_post') }}" mix-target="#block-btn-{{ tweet.post_pk }}"
-                    class="px-4 py-1 ma-0 bg-c-black rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center"
-                    style="border: 1px solid black;">
-                    <input type="hidden" name="post_pk" value="{{ tweet.post_pk }}">
-                    <button type="submit" class="text-c-white cursor-pointer">
-                        {{ x.lans("admin_block") }}
-                    </button>
-                </form>
-                {% endif %}
-            </div>
+            {% if tweet.post_blocked_at %}
+            {% include "___button_unblock_post.html" %}
+            {% else %}
+            {% include "___button_block_post.html" %}
+            {% endif %}
             {% endif %}
         </div>
     </div>

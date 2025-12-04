@@ -307,7 +307,7 @@ def home_comp():
         user = session.get("user", "")
         if not user: return "error"
         db, cursor = x.db()
-        q = "SELECT * FROM users JOIN posts ON user_pk = post_user_fk ORDER BY RAND() LIMIT 5"
+        q = "SELECT * FROM users JOIN posts ON user_pk = post_user_fk WHERE posts.post_blocked_at = 0 ORDER BY RAND() LIMIT 5"
         cursor.execute(q)
         tweets = cursor.fetchall()
         # ic(tweets)
@@ -498,17 +498,11 @@ def api_admin_block_user():
         except Exception as email_ex:
             ic(f"Failed to send block email: {email_ex}")
 
-        btn_html = f"""
-          <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_unblock_user')}\" mix-post class=\"d-flex a-items-center\"> 
-            <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
-            <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
-            <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">{x.lans('admin_unblock')}</button>
-          </form>
-        """
-        toast_ok = render_template("___toast_ok.html", message="User blocked")
+        btn_html = render_template("___button_unblock_user.html", user_username=username, user_pk=user_pk)
+        toast_ok = render_template("___toast_ok.html", message=x.lans('toast_user_blocked'))
         return f"""
             <browser mix-bottom="#toast">{toast_ok}</browser>
-            <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
+            <mixhtml mix-replace="#admin_btn_{user_pk}">{btn_html}</mixhtml>
         """, 200
     except Exception as ex:
         ic(ex)
@@ -550,17 +544,11 @@ def api_admin_unblock_user():
         except Exception as email_ex:
             ic(f"Failed to send unblock email: {email_ex}")
 
-        btn_html = f"""
-          <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_block_user')}\" mix-post class=\"d-flex a-items-center\"> 
-            <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
-            <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
-            <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">{x.lans('admin_block')}</button>
-          </form>
-        """
-        toast_ok = render_template("___toast_ok.html", message="User unblocked")
+        btn_html = render_template("___button_block_user.html", user_username=username, user_pk=user_pk)
+        toast_ok = render_template("___toast_ok.html", message=x.lans('toast_user_unblocked'))
         return f"""
-            <browser mix-bottom=\"#toast\">{toast_ok}</browser>
-            <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <mixhtml mix-replace="#admin_btn_{user_pk}">{btn_html}</mixhtml>
         """, 200
     except Exception as ex:
         ic(ex)
@@ -610,20 +598,11 @@ def api_admin_block_post():
         except Exception as email_ex:
             ic(f"Failed to send post blocked email: {email_ex}")
         
-        btn_html = f"""
-        <div id="block-btn-{post_pk}">
-            <form mix-post="{url_for('api_admin_unblock_post')}" mix-target="#block-btn-{post_pk}"
-                class="px-4 py-1 ma-0 bg-c-white rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center"
-                style="border: 1px solid black;">
-                <input type="hidden" name="post_pk" value="{post_pk}">
-                <button type="submit" class="text-c-black cursor-pointer">Unblock</button>
-            </form>
-        </div>
-        """
-        toast_ok = render_template("___toast_ok.html", message="Post blocked")
+        btn_html = render_template("___button_unblock_post.html", post_pk=post_pk)
+        toast_ok = render_template("___toast_ok.html", message=x.lans('toast_post_blocked'))
         return f"""
-            <browser mix-bottom="#toast">{toast_ok}</browser>
-            <browser mix-replace="#block-btn-{post_pk}">{btn_html}</browser>
+            <browser mix-bottom=\"#toast\">{toast_ok}</browser>
+            <mixhtml mix-replace=\"#block-btn-{post_pk}\">{btn_html}</mixhtml>
         """, 200
     except Exception as ex:
         ic(ex)
@@ -675,20 +654,11 @@ def api_admin_unblock_post():
         except Exception as email_ex:
             ic(f"Failed to send post unblocked email: {email_ex}")
 
-        toast_ok = render_template("___toast_ok.html", message="Post unblocked")
-        btn_html = f"""
-        <div id=\"block-btn-{post_pk}\"> 
-            <form mix-post=\"{url_for('api_admin_block_post')}\" mix-target=\"#block-btn-{post_pk}\"
-                class=\"px-4 py-1 ma-0 bg-c-black rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center\"
-                style=\"border: 1px solid black;\"> 
-                <input type=\"hidden\" name=\"post_pk\" value=\"{post_pk}\"> 
-                <button type=\"submit\" class=\"text-c-white cursor-pointer\">Block</button>
-            </form>
-        </div>
-        """
+        toast_ok = render_template("___toast_ok.html", message=x.lans('toast_post_unblocked'))
+        btn_html = render_template("___button_block_post.html", post_pk=post_pk)
         return f"""
-            <browser mix-bottom="#toast">{toast_ok}</browser>
-            <browser mix-replace="#block-btn-{post_pk}">{btn_html}</browser>
+            <browser mix-bottom=\"#toast\">{toast_ok}</browser>
+            <mixhtml mix-replace=\"#block-btn-{post_pk}\">{btn_html}</mixhtml>
         """, 200
     except Exception as ex:
         ic(ex)
@@ -696,7 +666,6 @@ def api_admin_unblock_post():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
-        
 
 ##############################
 @app.patch("/like-tweet")
