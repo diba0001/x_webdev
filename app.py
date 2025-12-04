@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, g
 from flask_session import Session
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
@@ -19,7 +19,7 @@ ic.configureOutput(prefix=f'----- | ', includeContext=True)
 app = Flask(__name__)
 
 # Set the maximum file size to 10 MB
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024   # 1 MB
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
@@ -41,9 +41,14 @@ def view_index():
 ##############################
 @app.context_processor
 def global_variables():
-    return dict (
-        dictionary = dictionary,
-        x = x
+    user = session.get("user", None)
+    lan = user.get("user_language", "english") if user else "english"
+    return dict(
+        lan=lan,
+        user=user,
+        x=x,
+        lans=x.lans,
+        dictionary=dictionary
     )
 
 ##############################
@@ -306,37 +311,57 @@ def api_like_tweet():
 @app.route("/api-create-post", methods=["POST"])
 def api_create_post():
     try:
+        print("Files in request:", request.files)
+        print("Form data:", request.form)
+
         user = session.get("user", "")
         if not user: return "invalid user"
         user_pk = user["user_pk"]        
         post = x.validate_post(request.form.get("post", ""))
         post_pk = uuid.uuid4().hex
-        post_image_path = ""
+        post_media_path = ""
         
         # Handle file upload
-        if 'post_file' in request.files:
-            file = request.files['post_file']
+        if 'post_media' in request.files:
+            file = request.files['post_media']
             if file and file.filename:
-                # Validate file
+                # CHECK FILE SIZE FIRST (5MB limit) - THIS WAS MISSING!
+                file.seek(0, 2)  # Seek to end
+                size = file.tell()
+                file.seek(0)  # Reset to beginning
+                
+                if size > 5 * 1024 * 1024:  # 5MB
+                    raise Exception("x-error file size too large")
+                
+                # Validate file extension
                 allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
                 file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
                 
-                if file_ext in allowed_extensions:
-                    # Generate unique filename
-                    from werkzeug.utils import secure_filename
-                    original_filename = secure_filename(file.filename)
-                    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
-                    
-                    # Save file
-                    file_path = os.path.join('static/images', unique_filename)
-                    file.save(file_path)
-                    
-                    # Store just the filename for database
-                    post_image_path = unique_filename
+                if file_ext not in allowed_extensions:
+                    raise Exception("x-error file invalid type")
+                
+                # Generate unique filename
+                from werkzeug.utils import secure_filename
+                original_filename = secure_filename(file.filename)
+                unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+
+                upload_dir = 'static/images'
+                if not os.path.exists(upload_dir):
+                    os.makedirs(upload_dir)
+                    print(f"Created directory: {upload_dir}")
+                
+                # Save file
+                file_path = os.path.join('static/images', unique_filename)
+                file.save(file_path)
+                
+                # Store just the filename for database
+                post_media_path = f"images/{unique_filename}"
         
         db, cursor = x.db()
-        q = "INSERT INTO posts VALUES(%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)"
-        cursor.execute(q, (post_pk, user_pk, post, 0, post_image_path))
+        q = """INSERT INTO posts 
+       (post_pk, post_user_fk, post_message, post_deleted_at, post_media_path, post_created_at, post_updated_at) 
+       VALUES(%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, 0)"""
+        cursor.execute(q, (post_pk, user_pk, post, 0, post_media_path))
         db.commit()
         toast_ok = render_template("___toast_ok.html", message="The world is reading your post !")
         tweet = {
@@ -347,7 +372,7 @@ def api_create_post():
             "user_username": user["user_username"],
             "user_avatar_path": user["user_avatar_path"],
             "post_message": post,
-            "post_image_path": post_image_path,
+            "post_media_path": post_media_path,
             "post_created_at": None
         }
         html_post_container = render_template("___post_container.html")
@@ -368,7 +393,10 @@ def api_create_post():
         
         # File upload errors
         if "x-error file" in str(ex):
-            toast_error = render_template("___toast_error.html", message="Invalid file type. Only images allowed.")
+            if "size too large" in str(ex):
+                toast_error = render_template("___toast_error.html", message="Image too large. Maximum 5MB.")
+            else:
+                toast_error = render_template("___toast_error.html", message="Invalid file type. Only images allowed.")
             return f"""<browser mix-bottom="#toast">{toast_error}</browser>"""
 
         # System or developer error
@@ -382,201 +410,227 @@ def api_create_post():
 ###################################
 @app.route("/api-delete-post/<post_pk>", methods=["DELETE"])
 def api_delete_post(post_pk):
+    
     try:
+        user = session.get("user", None)
+        # Check if user is logged in
+        if not user:
+            return "invalid user", 400 ## TODO: add a HTTP requests på de andre
+
+        db, cursor = x.db()
+
+
+        # Delete post from database IF its the users post
+        q = "DELETE FROM posts WHERE post_pk = %s and post_user_fk = %s"
+        cursor.execute(q, (post_pk, user["user_pk"],))
+        db.commit()
+
+        toast_ok = render_template("___toast_ok.html", message="Your post has been deleted") #TODO: Translate
+        
+        # Remove the post from the DOM + show toast
+        # return "ok"
+        return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-remove="#post_container_{post_pk}"></browser>
+        """, 200
+
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        toast_error = render_template("___toast_error.html", message="System under maintenance")
+        return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 500
+
+    finally: 
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+############## SINGLE POST/TWEET ################
+@app.get("/single-post/<post_pk>")
+def view_single_post(post_pk):
+    # Check if user is logged in
+    try:
+        user = session.get("user", None)
+        if not user:
+            return "invalid user", 400 ## TODO: add a HTTP requests på de andre
+
+        db, cursor = x.db() # Question: hvorfor skal linjen være her?
+
+        # Get likes on a post
+        q = """
+        SELECT 
+            users.*,
+            posts.*,
+            CASE 
+                WHEN likes.like_user_fk IS NOT NULL THEN 1
+                ELSE 0
+            END AS liked_by_user
+        FROM posts
+        JOIN users ON users.user_pk = posts.post_user_fk
+        LEFT JOIN likes 
+            ON likes.like_post_fk = posts.post_pk 
+            AND likes.like_user_fk = %s
+        WHERE posts.post_pk = %s
+        """
+        cursor.execute(q, (user["user_pk"], post_pk,))
+        
+        tweet = cursor.fetchone()
+
+        if not tweet:
+            return "Post not found", 404
+
+
+        # Get comments on a post
+        q = """
+        SELECT
+            comments.*,
+            users.user_first_name,
+            users.user_username,
+            users.user_avatar_path
+        FROM comments
+        JOIN users ON users.user_pk = comments.comment_user_fk
+        WHERE comments.comment_post_fk = %s
+        ORDER BY comments.created_at DESC
+        """
+
+        # ORDER BY comments.created_at DESC (means: Show the newest comments first)
+        
+        cursor.execute(q, (post_pk,))  
+        comments = cursor.fetchall()
+
+        # Manglede at sende post_pk til templaten
+        single_post_html = render_template("_single_post.html", tweet=tweet, comments=comments, post_pk=post_pk)
+        return f"""<browser mix-update="main">{ single_post_html }</browser>"""
+
+    except Exception as ex:
+        
+        # SYSTEM ERROR
+        toast_error = render_template("___toast_error.html", message="Error") # TODO: lav en message der passer til error
+        return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+##############################
+@app.get("/edit-post/<post_pk>")
+@x.no_cache
+def edit_post(post_pk):
+    try:
+        # Log the incoming post_pk
+        print(f"DEBUG: Received post_pk: {post_pk}")
+        
+        # Brug session
         user = session.get("user", "")
-        if not user: 
+        if not user:
             toast_error = render_template("___toast_error.html", message="You must be logged in")
             return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 401
         
-        db, cursor = x.db()
+        print(f"DEBUG: User logged in: {user.get('user_pk')}")
         
-        # Check if post belongs to user
-        q = "SELECT post_image_path FROM posts WHERE post_pk = %s AND post_user_fk = %s"
+        # Valider post_pk (VIGTIGT for sikkerhed!)
+        post_pk = x.validate_uuid4_without_dashes(post_pk)
+        print(f"DEBUG: Validated post_pk: {post_pk}")
+        
+        # get post from db
+        db, cursor = x.db()
+        q = "SELECT * FROM posts WHERE post_pk = %s AND post_user_fk = %s AND post_deleted_at = 0"
         cursor.execute(q, (post_pk, user["user_pk"]))
         post = cursor.fetchone()
         
+        print(f"DEBUG: Post found: {post is not None}")
+        if post:
+            print(f"DEBUG: Post data: {post}")
+ 
         if not post:
-            toast_error = render_template("___toast_error.html", message="Post not found or unauthorized")
+            toast_error = render_template("___toast_error.html", message="Post not found or you don't have permission")
             return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 403
         
-        # Delete image file if exists
-        if post["post_image_path"]:
-            image_path = os.path.join('static/images', post["post_image_path"])
-            if os.path.exists(image_path):
-                os.remove(image_path)
-        
-        # Delete post from database
-        q = "DELETE FROM posts WHERE post_pk = %s"
-        cursor.execute(q, (post_pk,))
-        db.commit()
-        
-        toast_ok = render_template("___toast_ok.html", message="Post deleted!")
-        
-        # Return proper mixhtml response
-        return f"""
-<browser mix-bottom="#toast">{toast_ok}</browser>
-<browser mix-remove="#post_{post_pk}"></browser>
-        """.strip()
+        print("DEBUG: About to render template")
+        edit_post_html = render_template("_edit_post.html", post=post)
+        print(f"DEBUG: Template rendered successfully, length: {len(edit_post_html)}")
+        return f'<template mix-replace="#post_container_{post_pk}">{edit_post_html}</template>'
         
     except Exception as ex:
+        print(f"ERROR: Exception occurred: {type(ex).__name__}")
+        print(f"ERROR: Exception message: {str(ex)}")
+        import traceback
+        print(f"ERROR: Full traceback:\n{traceback.format_exc()}")
         ic(ex)
-        if "db" in locals(): db.rollback()
-        
-        toast_error = render_template("___toast_error.html", message="Failed to delete post")
+        toast_error = render_template("___toast_error.html", message="Could not load post")
         return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 500
-        
+ 
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
-
-##############################
+############################## 
 @app.route("/api-update-post/<post_pk>", methods=["POST"])
-def api_update_post(post_pk): 
+def api_update_post(post_pk):
     try:
+        # Brug session
         user = session.get("user", "")
-        if not user: 
+        if not user:
             toast_error = render_template("___toast_error.html", message="You must be logged in")
             return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 401
-        
-        # Validate
+        # Valider post_pk
         post_pk = x.validate_uuid4_without_dashes(post_pk)
-        post_message = x.validate_post(request.form.get("post", ""))
-        remove_image = request.form.get("remove_image", "0") == "1"
-        
+        # Get and validate new post message
+        post_message = request.form.get("post_message", "").strip()
+        if not post_message:
+            toast_error = render_template("___toast_error.html", message="Post cannot be empty")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 400
+        # Validate post length
+        post_message = x.validate_post(post_message)
+        # Update timestamp
+        post_updated_at = int(time.time())
+        # Update database
         db, cursor = x.db()
-        
-        # Check if post belongs to user
-        q = "SELECT * FROM posts WHERE post_pk = %s AND post_user_fk = %s"
-        cursor.execute(q, (post_pk, user["user_pk"]))
-        existing_post = cursor.fetchone()
-        
-        if not existing_post:
-            raise Exception("Post not found or you don't have permission", 403)
-        
-        new_image_path = existing_post["post_image_path"]
-        
-        # Handle image removal
-        if remove_image and existing_post["post_image_path"]:
-            image_path = os.path.join('static/images', existing_post["post_image_path"])
-            if os.path.exists(image_path):
-                os.remove(image_path)
-            new_image_path = ""
-        
-        # Handle new file upload
-        if 'post_file' in request.files:
-            file = request.files['post_file']
-            if file and file.filename:
-                allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-                file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
-                
-                if file_ext in allowed_extensions:
-                    # Delete old image if exists
-                    if existing_post["post_image_path"]:
-                        old_image_path = os.path.join('static/images', existing_post["post_image_path"])
-                        if os.path.exists(old_image_path):
-                            os.remove(old_image_path)
-                    
-                    # Save new image
-                    original_filename = secure_filename(file.filename)
-                    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
-                    file_path = os.path.join('static/images', unique_filename)
-                    file.save(file_path)
-                    new_image_path = unique_filename
-        
-        # Update post in database
-        q = "UPDATE posts SET post_message = %s, post_image_path = %s WHERE post_pk = %s"
-        cursor.execute(q, (post_message, new_image_path, post_pk))
+        q = """UPDATE posts 
+               SET post_message = %s, post_updated_at = %s 
+               WHERE post_pk = %s AND post_user_fk = %s AND post_deleted_at = 0"""
+        cursor.execute(q, (post_message, post_updated_at, post_pk, user["user_pk"]))
         db.commit()
-        
-        # Fetch the updated post with all necessary data for rendering
-        q = """
-            SELECT posts.*, users.user_username, users.user_name, users.user_avatar 
-            FROM posts 
-            JOIN users ON posts.post_user_fk = users.user_pk 
-            WHERE posts.post_pk = %s
-        """
-        cursor.execute(q, (post_pk,))
-        updated_post = cursor.fetchone()
-        
-        # Render the updated post card
-        updated_post_html = render_template("___post_card.html", post=updated_post, user=user)
-        
+        # Check if update was successful
+        if cursor.rowcount != 1:
+            raise Exception("Could not update post", 400)
+        # Fetch updated tweets
+        q = """SELECT 
+                users.*,
+                posts.*,
+                CASE WHEN likes.like_user_fk IS NOT NULL THEN 1 ELSE 0 END AS liked_by_user
+            FROM posts
+            JOIN users ON users.user_pk = posts.post_user_fk
+            LEFT JOIN likes ON likes.like_post_fk = posts.post_pk AND likes.like_user_fk = %s
+            WHERE posts.post_deleted_at = 0
+            ORDER BY posts.post_updated_at DESC, RAND()
+            LIMIT 5"""
+        cursor.execute(q, (user["user_pk"],))
+        tweets = cursor.fetchall()
+        # Send success response
         toast_ok = render_template("___toast_ok.html", message="Post updated successfully!")
+        home_html = render_template("_home_comp.html", tweets=tweets)
         return f"""
-            <browser mix-update="#toast">{toast_ok}</browser>
-            <browser mix-replace="#post_{post_pk}">{updated_post_html}</browser>
-            <browser>closeEditModal()</browser>
+<browser mix-bottom="#toast">{toast_ok}</browser>
+<browser mix-update="main">{home_html}</browser>
         """
-        
     except Exception as ex:
         ic(ex)
-        if "db" in locals(): db.rollback()
-        
-        # User errors
+        if "db" in locals():
+            db.rollback()
+        # User validation error
         if "x-error post" in str(ex):
-            toast_error = render_template("___toast_error.html", message=f"Post - {x.POST_MIN_LEN} to {x.POST_MAX_LEN} characters")
-            return f"""<browser mix-bottom="#toast">{toast_error}</browser>"""
-        
-        toast_error = render_template("___toast_error.html", message="Failed to update post")
+            toast_error = render_template("___toast_error.html", 
+                message=f"Post must be {x.POST_MIN_LEN} to {x.POST_MAX_LEN} characters")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 400
+        # System error
+        toast_error = render_template("___toast_error.html", message="Could not update post")
         return f"""<browser mix-bottom="#toast">{toast_error}</browser>""", 500
-        
+ 
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
-##############################
-@app.route("/api-update-profile", methods=["POST"])
-def api_update_profile():
-
-    try:
-
-        user = session.get("user", "")
-        lan = session["user"]["user_language"]
-        if not user: return "invalid user"
-
-        # Validate
-        user_email = x.validate_user_email(lan)
-        user_username = x.validate_user_username()
-        user_first_name = x.validate_user_first_name()
-
-        # Connect to the database
-        q = "UPDATE users SET user_email = %s, user_username = %s, user_first_name = %s WHERE user_pk = %s"
-        db, cursor = x.db()
-        cursor.execute(q, (user_email, user_username, user_first_name, user["user_pk"]))
-        db.commit()
-
-        # Response to the browser
-      
-        toast_ok = render_template("___toast_ok.html", message=f"{dictionary.profile_updated_successfully[lan]}")
-        return f"""
-            <browser mix-bottom="#toast">{toast_ok}</browser>
-            <browser mix-update="#profile_tag .name">{user_first_name}</browser>
-            <browser mix-update="#profile_tag .handle">{user_username}</browser>
-            
-        """, 200
-    except Exception as ex:
-        ic(ex)
-        # User errors
-        if ex.args[1] == 400:
-            toast_error = render_template("___toast_error.html", message=ex.args[0])
-            return f"""<mixhtml mix-update="#toast">{ toast_error }</mixhtml>""", 400
-        
-        # Database errors
-        if "Duplicate entry" and user_email in str(ex): 
-            toast_error = render_template("___toast_error.html", message=f"{dictionary.email_already_registered[lan]}")
-            return f"""<mixhtml mix-update="#toast">{ toast_error }</mixhtml>""", 400
-        if "Duplicate entry" and user_username in str(ex): 
-            toast_error = render_template("___toast_error.html", message=f"{dictionary.username_already_registered[lan]}")
-            return f"""<mixhtml mix-update="#toast">{ toast_error }</mixhtml>""", 400
-        
-        # System or developer error
-        toast_error = render_template("___toast_error.html", message=f"{dictionary.system_under_maintenance[lan]}")
-        return f"""<mixhtml mix-bottom="#toast">{ toast_error }</mixhtml>""", 500
-
-    finally:
-        if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()
 
 ##############################
 @app.post("/api-search")

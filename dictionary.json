@@ -234,10 +234,15 @@
         "danish": "Tilbage",
         "spanish": "Guardar cambios"
     },
-    "Delete": {
+    "delete": {
         "english": "Delete",
         "danish": "Slet",
         "spanish": "Eliminar"
+    },
+    "deleting_post": {
+        "english": "Deleting post",
+        "danish": "Sletter post",
+        "spanish": "Eliminando el post"
     },
     "welcome_to_x": {
         "english": "Welcome to X",
@@ -328,6 +333,11 @@
         "english": "Unblock",
         "danish": "Fjern blokering",
         "spanish": "Desbloquear"
+    },
+    "admin_no_users": {
+        "english": "No users found.",
+        "danish": "Ingen brugere fundet.",
+        "spanish": "No se encontraron usuarios."
     },
     "this_cant_be_undone": {
         "english": "This cannot be reverted.",

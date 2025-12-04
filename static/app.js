@@ -64,3 +64,46 @@ burger.addEventListener("click", () => {
   // toggle icon
   burger.classList.toggle("open");
 });
+
+// Image preview functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const mediaInput = document.getElementById('post_media_input');
+    const previewArea = document.getElementById('media_preview_area');
+    
+    if (mediaInput) {
+        mediaInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            // Clear previous preview
+            previewArea.innerHTML = '';
+            
+            if (file) {
+                // Check if it's an image
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const preview = document.createElement('div');
+                        preview.className = 'media-preview';
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin: 10px 0;">
+                            <button type="button" class="remove-preview-btn" style="margin-left: 10px;">
+                                <i class="fa-solid fa-times"></i> Remove
+                            </button>
+                        `;
+                        
+                        previewArea.appendChild(preview);
+                        
+                        // Add remove functionality
+                        preview.querySelector('.remove-preview-btn').addEventListener('click', function() {
+                            previewArea.innerHTML = '';
+                            mediaInput.value = '';
+                        });
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    }
+});

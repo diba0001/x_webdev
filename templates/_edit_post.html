@@ -1,0 +1,48 @@
+<div class="post_container" id="post_container_{{ post.post_pk }}">
+    <div class="edit-post-page">
+        <div class="profile-header">
+            <a href="#" mix-get="/home-comp" class="back-button">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div class="header-info">
+                <h2>{{ x.lans("edit_post")}}</h2>
+            </div>
+        </div>
+
+        <div class="edit-post-wrapper">
+            <form mix-post="/api-update-post/{{ post.post_pk }}" class="edit-post-form">
+
+                <div class="edit-form-group">
+                    <textarea name="post_message" class="edit-textarea" rows="5"
+                        maxlength="250">{{ post.post_message }}</textarea>
+                    <small class="char-counter">{{ post.post_message|length }}/250</small>
+                </div>
+
+                {% if post.post_media_path %}
+                <div class="edit-media-preview">
+                    {% set file_ext = post.post_media_path.split('.')[-1].lower() %}
+
+                    {% if file_ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+                    <img src="{{ url_for('static', filename=post.post_media_path) }}" alt="Post image"
+                        class="post-media">
+                    {% elif file_ext in ['mp4', 'mov', 'webm'] %}
+                    <video controls class="post-media">
+                        <source src="{{ url_for('static', filename=post.post_media_path) }}"
+                            type="video/{{ file_ext }}">
+                    </video>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="edit-form-actions">
+                    <button type="button" mix-get="/home-comp" class="btn-cancel">
+                        {{ x.lans("cancel")}}
+                    </button>
+                    <button type="submit" class="btn-save">
+                        {{ x.lans("save_changes")}}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
