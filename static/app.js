@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         preview.className = 'media-preview';
                         preview.innerHTML = `
                             <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin: 10px 0;">
-                            <button type="button" class="remove-preview-btn" style="margin-left: 10px;">
+                            <button type="button" class="btn-cancel" style="margin-left: 10px;">
                                 <i class="fa-solid fa-times"></i> ${removeText}
                             </button>
                         `;
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         previewArea.appendChild(preview);
                         
                         // Add remove functionality
-                        preview.querySelector('.remove-preview-btn').addEventListener('click', function() {
+                        preview.querySelector('.btn-cancel').addEventListener('click', function() {
                             previewArea.innerHTML = '';
                             mediaInput.value = '';
                         });
