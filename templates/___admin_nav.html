@@ -1,0 +1,9 @@
+<button mix-get="{{ url_for('admin_users_section') }}"
+  class="admin-nav-btn {% if request.path == url_for('admin') or request.path == url_for('admin_users_section') %}active{% endif %}">
+  {{x.lans("admin_users")}}
+</button>
+
+<button mix-get="{{ url_for('admin_posts_section') }}"
+  class="admin-nav-btn {% if request.path == url_for('admin_posts_section') %}active{% endif %}">
+  {{x.lans("admin_blocked")}}
+</button>

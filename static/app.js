@@ -64,3 +64,110 @@ burger.addEventListener("click", () => {
   // toggle icon
   burger.classList.toggle("open");
 });
+
+// Image preview functionality for CREATE POST
+document.addEventListener('DOMContentLoaded', function() {
+    const mediaInput = document.getElementById('post_media_input');
+    const previewArea = document.getElementById('media_preview_area');
+    
+    if (mediaInput) {
+        mediaInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            // Clear previous preview
+            previewArea.innerHTML = '';
+            
+            if (file) {
+                // Check if it's an image
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const postContainer = document.getElementById('post_container');
+                        const removeText = postContainer.dataset.removeText;
+                        
+                        const preview = document.createElement('div');
+                        preview.className = 'media-preview';
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin: 10px 0;">
+                            <button type="button" class="btn-cancel" style="margin-left: 10px;">
+                                <i class="fa-solid fa-times"></i> ${removeText}
+                            </button>
+                        `;
+                        
+                        previewArea.appendChild(preview);
+                        
+                        // Add remove functionality
+                        preview.querySelector('.btn-cancel').addEventListener('click', function() {
+                            previewArea.innerHTML = '';
+                            mediaInput.value = '';
+                        });
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    }
+
+    // Use event delegation for dynamically loaded edit inputs
+    attachEditMediaPreviewListeners();
+});
+
+// Function to attach edit media preview listeners (can be called multiple times)
+function attachEditMediaPreviewListeners() {
+    document.addEventListener('change', function(e) {
+        // Check if the changed element is an edit media input
+        if (e.target && e.target.id && e.target.id.startsWith('edit_media_input_')) {
+            const postPk = e.target.id.replace('edit_media_input_', '');
+            const file = e.target.files[0];
+            const previewArea = document.getElementById(`new_media_preview_${postPk}`);
+            
+            if (!previewArea) return;
+            
+            previewArea.innerHTML = '';
+            
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const preview = document.createElement('div');
+                    preview.className = 'media-preview';
+                    preview.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin: 10px 0;">
+                        <button type="button" class="remove-new-preview-btn" style="margin-left: 10px;">
+                            <i class="fa-solid fa-times"></i> Remove
+                        </button>
+                    `;
+                    previewArea.appendChild(preview);
+                    
+                    // Add remove functionality for new preview
+                    preview.querySelector('.remove-new-preview-btn').addEventListener('click', function() {
+                        previewArea.innerHTML = '';
+                        document.getElementById(`edit_media_input_${postPk}`).value = '';
+                    });
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+}
+
+// Remove existing media in edit mode
+function removeEditMedia(postPk) {
+    // Mark the media for removal FIRST (before clearing the preview)
+    const removeInput = document.getElementById(`remove_media_${postPk}`);
+    if (removeInput) {
+        removeInput.value = '1';
+        console.log(`Marked media for removal: remove_media_${postPk} = 1`);
+    } else {
+        console.error(`Could not find remove_media input for post ${postPk}`);
+    }
+    
+    // Clear the preview
+    const previewArea = document.getElementById(`edit_media_preview_${postPk}`);
+    if (previewArea) {
+        previewArea.innerHTML = '';
+    }
+}

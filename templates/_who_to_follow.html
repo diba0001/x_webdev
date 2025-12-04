@@ -1,5 +1,5 @@
 <div class="d-flex a-items-center">
-    <img src="{{ url_for('static', filename='images/' ~ (suggestion.user_avatar_path if suggestion.user_avatar_path else 'unknown.jpg')) }}" class="w-8 h-8 rounded-full" alt="Profile Picture">
+    <img src="/{{ suggestion.user_avatar_path if suggestion.user_avatar_path else 'static/images/avatars/unknown.jpg' }}" class="w-8 h-8 rounded-full" alt="Profile Picture">
     <div class="w-full ml-2">
         <p class="">
             {{ suggestion.user_first_name }} {{ suggestion.user_last_name }}
@@ -7,5 +7,13 @@
         </p>
     
     </div>
-    <button class="px-4 py-1 text-c-white bg-c-black rounded-lg">Follow</button>
+    {% if suggestion.is_followed_by_user %}
+        {% with user_pk=suggestion.user_pk %}
+            {% include "___button_unfollow.html" %}
+        {% endwith %}
+    {% else %}
+        {% with user_pk=suggestion.user_pk %}
+            {% include "___button_follow.html" %}
+        {% endwith %}
+    {% endif %}
 </div>

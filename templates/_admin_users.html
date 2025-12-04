@@ -1,0 +1,17 @@
+<h2 class="text-120 mb-2">{{x.lans("admin_users")}}</h2>
+{% for user in users %}
+<div id="admin_user_{{ user.user_pk }}"
+  class="d-flex a-items-center j-content-between pa-2 border-b-1 border-c-gray:+20">
+  <div class="text-100">@{{ user.user_username }}</div>
+  {% set user_username = user.user_username %}
+  {% set user_pk = user.user_pk %}
+
+  {% if user.user_blocked_at %}
+  {% include "___button_unblock_user.html" %}
+  {% else %}
+  {% include "___button_block_user.html" %}
+  {% endif %}
+</div>
+{% else %}
+<p>{{ x.lans("admin_no_users") }}</p>
+{% endfor %}

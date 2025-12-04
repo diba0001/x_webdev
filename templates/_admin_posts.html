@@ -1,0 +1,13 @@
+<h2 class="text-120 mb-2">{{x.lans("admin_blocked")}}</h2>
+
+{% if blocked_posts and blocked_posts|length > 0 %}
+<div id="admin_blocked_posts" class="d-flex flex-col gap-3">
+    {% for tweet in blocked_posts %}
+    {% include "_tweet.html" %}
+    {% endfor %}
+</div>
+{% else %}
+<div class="pa-2">
+    <p>{{ x.lans("admin_no_blocked_posts") }}</p>
+</div>
+{% endif %}
