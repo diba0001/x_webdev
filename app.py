@@ -584,6 +584,30 @@ def api_admin_block_post():
         db, cursor = x.db()
         cursor.execute("UPDATE posts SET post_blocked_at = %s WHERE post_pk = %s", (int(time.time()), post_pk))
         db.commit()
+
+        try:
+            cursor.execute(
+                """
+                SELECT u.user_email, u.user_username, p.post_message, p.post_created_at
+                FROM posts p
+                JOIN users u ON u.user_pk = p.post_user_fk
+                WHERE p.post_pk = %s
+                """,
+                (post_pk,)
+            )
+            row = cursor.fetchone()
+            if row and row.get("user_email"):
+                subject = "Your post has been blocked"
+                body = f"""
+                <p>Hello @{row.get('user_username', '')},</p>
+                <p>Your post has been blocked by an administrator.</p>
+                <p><strong>Message:</strong><br>{row.get('post_message', '')}</p>
+                <p><strong>Posted at:</strong> {row.get('post_created_at', '')}</p>
+                <p>If you believe this is a mistake, please contact support.</p>
+                """
+                x.send_email(row["user_email"], subject, body)
+        except Exception as email_ex:
+            ic(f"Failed to send post blocked email: {email_ex}")
         
         btn_html = f"""
         <div id="block-btn-{post_pk}">
@@ -624,6 +648,30 @@ def api_admin_unblock_post():
         db, cursor = x.db()
         cursor.execute("UPDATE posts SET post_blocked_at = 0 WHERE post_pk = %s", (post_pk,))
         db.commit()
+
+        try:
+            cursor.execute(
+                """
+                SELECT u.user_email, u.user_username, p.post_message, p.post_created_at
+                FROM posts p
+                JOIN users u ON u.user_pk = p.post_user_fk
+                WHERE p.post_pk = %s
+                """,
+                (post_pk,)
+            )
+            row = cursor.fetchone()
+            if row and row.get("user_email"):
+                subject = "Your post has been unblocked"
+                body = f"""
+                <p>Hello @{row.get('user_username', '')},</p>
+                <p>Your post has been unblocked by an administrator.</p>
+                <p><strong>Message:</strong><br>{row.get('post_message', '')}</p>
+                <p><strong>Posted at:</strong> {row.get('post_created_at', '')}</p>
+                <p>You can now view it again.</p>
+                """
+                x.send_email(row["user_email"], subject, body)
+        except Exception as email_ex:
+            ic(f"Failed to send post unblocked email: {email_ex}")
 
         toast_ok = render_template("___toast_ok.html", message="Post unblocked")
         btn_html = f"""
@@ -1137,6 +1185,11 @@ def get_data_from_sheet():
     try:
  
         # Check if the admin is running this end-point, else show error
+        admin_user = session.get("user", "")
+        if not admin_user:
+            return redirect(url_for("login"))
+        if not admin_user.get("user_is_admin"):
+            return redirect(url_for("home"))
  
         # flaskwebmail
         # Create a google sheet
@@ -1144,7 +1197,6 @@ def get_data_from_sheet():
         # In the link, find the ID of the sheet. Here: 1aPqzumjNp0BwvKuYPBZwel88UO-OC_c9AEMFVsCw1qU
         # Replace the ID in the 2 places bellow
         url= f"https://docs.google.com/spreadsheets/d/{x.google_spread_sheet_key}/export?format=csv&id={x.google_spread_sheet_key}"
-        # url = f"https://docs.google.com/spreadsheets/d/{x.google_spread_sheet_key}/export?format=csv&gid=0"
         res=requests.get(url=url)
         # ic(res.text) # contains the csv text structure
         csv_text = res.content.decode('utf-8')
