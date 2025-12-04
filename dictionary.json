@@ -224,6 +224,21 @@
         "danish": "Log på X",
         "spanish": "Inicia sesión en X"
     },
+    "save_changes": {
+        "english": "Save changes",
+        "danish": "Gem",
+        "spanish": "Cancelar"
+    },
+    "cancel": {
+        "english": "Cancel",
+        "danish": "Tilbage",
+        "spanish": "Guardar cambios"
+    },
+    "Delete": {
+        "english": "Delete",
+        "danish": "Slet",
+        "spanish": "Eliminar"
+    },
     "welcome_to_x": {
         "english": "Welcome to X",
         "danish": "Velkommen til X",
@@ -258,5 +273,70 @@
         "english": "min ago",
         "danish": "min siden",
         "spanish": "hace min"
+    },
+    "edit_post": {
+        "english": "Edit post",
+        "danish": "Opdater",
+        "spanish": "Actualizar"
+    },
+    "remove_image": {
+        "english": "Remove image",
+        "danish": "Fjern billede",
+        "spanish": "Fjern billede"
+    },
+    "add_image": {
+        "english": "Add image",
+        "danish": "Tilføj billede",
+        "spanish": "Añadir imagen"
+    },
+    "new_image_preview": {
+        "english": "New image preview",
+        "danish": "Forhåndsvisning",
+        "spanish": "Vista previa"
+    },
+    "edit_current_image": {
+        "english": "Change image",
+        "danish": "Ændr billede",
+        "spanish": "Cambiar imagen"
+    },
+    "admin_title": {
+        "english": "Admin",
+        "danish": "Admin",
+        "spanish": "Admin"
+    },
+    "admin_users": {
+        "english": "Users",
+        "danish": "Brugere",
+        "spanish": "Usuarios"
+    },
+    "admin_blocked": {
+        "english": "Blocked posts",
+        "danish": "Blokerede opslag",
+        "spanish": "Publicaciones bloqueadas"
+    },
+    "admin_no_blocked_posts": {
+        "english": "No blocked posts found.",
+        "danish": "Ingen blokerede opslag.",
+        "spanish": "No se encontraron publicaciones bloqueadas."
+    },
+    "admin_block": {
+        "english": "Block",
+        "danish": "Bloker",
+        "spanish": "Bloquear"
+    },
+    "admin_unblock": {
+        "english": "Unblock",
+        "danish": "Fjern blokering",
+        "spanish": "Desbloquear"
+    },
+    "admin_no_users": {
+        "english": "No users found.",
+        "danish": "Ingen brugere fundet.",
+        "spanish": "No se encontraron usuarios."
+    },
+    "this_cant_be_undone": {
+        "english": "This cannot be reverted.",
+        "danish": "Dette kan ikke fortrydes.",
+        "spanish": "Esto no se puede deshacer."
     }
 }

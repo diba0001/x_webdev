@@ -199,6 +199,7 @@ def home():
                 (SELECT COUNT(*) FROM likes WHERE like_post_fk = p.post_pk AND like_user_fk = %s) AS is_liked_by_user
             FROM posts p
             JOIN users u ON u.user_pk = p.post_user_fk 
+            WHERE p.post_blocked_at = 0
             ORDER BY RAND() LIMIT 5
         """
         cursor.execute(q, (user_pk,))
@@ -230,6 +231,7 @@ def home():
         # Convert 1/0 to Boolean for Jinja
         for suggestion in suggestions:
             suggestion['is_followed_by_user'] = True if suggestion['is_followed_by_user'] > 0 else False
+            suggestion.pop("user_password", None)
         
         # Following query to get users that the current user is following
         q = """
@@ -246,6 +248,7 @@ def home():
          # Convert 1/0 to Boolean for Jinja
         for follow in following:
             follow['is_followed_by_user'] = True if follow['is_followed_by_user'] > 0 else False
+            follow.pop("user_password", None)
 
         lan = session["user"]["user_language"]
 
@@ -353,9 +356,15 @@ def admin():
         
         # Get all non-admin users
         db, cursor = x.db()
-        q = "SELECT user_pk, user_username, user_blocked_at FROM users WHERE user_is_admin = 0 ORDER BY user_username"
+        q = """
+        SELECT user_pk, user_username, user_first_name, user_blocked_at
+        FROM users
+        WHERE user_is_admin = 0
+        ORDER BY user_username
+        """
         cursor.execute(q)
         users = cursor.fetchall()
+
         html = render_template("_admin.html", user=user, users=users, lan=lan, x=x)
         return f"""<browser mix-update="main">{ html }</browser>"""
     except Exception as ex:
@@ -365,6 +374,95 @@ def admin():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+##############################
+@app.get("/admin-users-section")
+def admin_users_section():
+    try:
+        user = session.get("user", "")
+        if not user:
+            return redirect(url_for("login"))
+
+        if not user.get("user_is_admin"):
+            return redirect(url_for("home"))
+
+        db, cursor = x.db()
+        q = """
+        SELECT user_pk, user_username, user_first_name, user_blocked_at
+        FROM users
+        WHERE user_is_admin = 0
+        ORDER BY user_username
+        """
+        cursor.execute(q)
+        users = cursor.fetchall()
+
+        nav_html = render_template("___admin_nav.html")
+        content_html = render_template("_admin_users.html", users=users, user=user, x=x)
+
+        return f"""
+        <browser mix-update="#admin_nav">{ nav_html }</browser>
+        <browser mix-update="#admin_content">{ content_html }</browser>
+        """
+    except Exception as ex:
+        ic(ex)
+        return "error"
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+##############################
+@app.get("/admin-posts-section")
+def admin_posts_section():
+    try:
+        user = session.get("user", "")
+        if not user:
+            return redirect(url_for("login"))
+
+        if not user.get("user_is_admin"):
+            return redirect(url_for("home"))
+
+        db, cursor = x.db()
+
+        # Get blocked posts with user fields and like status like the home feed
+        user_pk = user["user_pk"]
+        q = """
+            SELECT 
+                p.post_pk,
+                p.post_message,
+                p.post_image_path,
+                p.post_total_likes,
+                p.post_blocked_at,
+                u.user_first_name,
+                u.user_last_name,
+                u.user_username,
+                u.user_avatar_path,
+                (
+                    SELECT COUNT(*) 
+                    FROM likes 
+                    WHERE like_post_fk = p.post_pk AND like_user_fk = %s
+                ) AS is_liked_by_user
+            FROM posts p
+            JOIN users u ON u.user_pk = p.post_user_fk 
+            WHERE p.post_blocked_at != 0
+            ORDER BY p.post_blocked_at DESC
+        """
+        cursor.execute(q, (user_pk,))
+        blocked_posts = cursor.fetchall()
+
+        content_html = render_template("_admin_posts.html", blocked_posts=blocked_posts, user=user, x=x)
+        nav_html = render_template("___admin_nav.html")
+
+        return f"""
+        <browser mix-update="#admin_nav">{ nav_html }</browser>
+        <browser mix-update="#admin_content">{ content_html }</browser>
+        """
+    except Exception as ex:
+        ic(ex)
+        return "error"
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 
 ##############################
@@ -385,14 +483,31 @@ def api_admin_block_user():
         cursor.execute("UPDATE users SET user_blocked_at = %s WHERE user_pk = %s", (int(time.time()), user_pk))
         db.commit()
 
+        try:
+            cursor.execute("SELECT user_email FROM users WHERE user_pk = %s", (user_pk,))
+            user_row = cursor.fetchone()
+            if user_row and user_row.get("user_email"):
+                blocked_email = user_row["user_email"]
+                subject = "Your account has been blocked"
+                body = f"""
+                <p>Hello {username},</p>
+                <p>Your account has been blocked by an administrator.</p>
+                <p>If you believe this is a mistake, please contact support.</p>
+                """
+                x.send_email(blocked_email, subject, body)
+        except Exception as email_ex:
+            ic(f"Failed to send block email: {email_ex}")
+
         btn_html = f"""
           <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_unblock_user')}\" mix-post class=\"d-flex a-items-center\"> 
             <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
             <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
-            <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Unblock</button>
+            <button class=\"px-4 py-1 text-c-black bg-c-white rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">{x.lans('admin_unblock')}</button>
           </form>
         """
+        toast_ok = render_template("___toast_ok.html", message="User blocked")
         return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
             <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
         """, 200
     except Exception as ex:
@@ -420,14 +535,31 @@ def api_admin_unblock_user():
         cursor.execute("UPDATE users SET user_blocked_at = 0 WHERE user_pk = %s", (user_pk,))
         db.commit()
 
+        try:
+            cursor.execute("SELECT user_email FROM users WHERE user_pk = %s", (user_pk,))
+            user_row = cursor.fetchone()
+            if user_row and user_row.get("user_email"):
+                unblocked_email = user_row["user_email"]
+                subject = "Your account has been unblocked"
+                body = f"""
+                <p>Hello {username},</p>
+                <p>Your account has been unblocked by an administrator.</p>
+                <p>You can now login to the account again</p>
+                """
+                x.send_email(unblocked_email, subject, body)
+        except Exception as email_ex:
+            ic(f"Failed to send unblock email: {email_ex}")
+
         btn_html = f"""
           <form id=\"admin_btn_{username}\" action=\"{url_for('api_admin_block_user')}\" mix-post class=\"d-flex a-items-center\"> 
             <input type=\"hidden\" name=\"user_username\" value=\"{username}\"> 
             <input type=\"hidden\" name=\"user_pk\" value=\"{user_pk}\"> 
-            <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg\" type=\"submit\" style=\"border: 1px solid black;\">Block</button>
+            <button class=\"px-4 py-1 text-c-white bg-c-black rounded-lg cursor-pointer\" type=\"submit\" style=\"border: 1px solid black;\">{x.lans('admin_block')}</button>
           </form>
         """
+        toast_ok = render_template("___toast_ok.html", message="User unblocked")
         return f"""
+            <browser mix-bottom=\"#toast\">{toast_ok}</browser>
             <browser mix-replace=\"#admin_btn_{username}\">{btn_html}</browser>
         """, 200
     except Exception as ex:
@@ -436,6 +568,85 @@ def api_admin_unblock_user():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
+##############################
+@app.post("/api-admin-block-post")
+def api_admin_block_post():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user or not admin_user.get("user_is_admin"):
+            return "forbidden", 403
+
+        post_pk = request.form.get("post_pk", "")
+        if not post_pk:
+            return "missing post_pk", 400
+
+        db, cursor = x.db()
+        cursor.execute("UPDATE posts SET post_blocked_at = %s WHERE post_pk = %s", (int(time.time()), post_pk))
+        db.commit()
+        
+        btn_html = f"""
+        <div id="block-btn-{post_pk}">
+            <form mix-post="{url_for('api_admin_unblock_post')}" mix-target="#block-btn-{post_pk}"
+                class="px-4 py-1 ma-0 bg-c-white rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center"
+                style="border: 1px solid black;">
+                <input type="hidden" name="post_pk" value="{post_pk}">
+                <button type="submit" class="text-c-black cursor-pointer">Unblock</button>
+            </form>
+        </div>
+        """
+        toast_ok = render_template("___toast_ok.html", message="Post blocked")
+        return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-replace="#block-btn-{post_pk}">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################
+@app.post("/api-admin-unblock-post")
+def api_admin_unblock_post():
+    try:
+        admin_user = session.get("user", "")
+        if not admin_user or not admin_user.get("user_is_admin"):
+            return "forbidden", 403
+
+        post_pk = request.form.get("post_pk", "")
+        if not post_pk:
+            return "missing post_pk", 400
+
+        source = request.form.get("source", "")
+
+        db, cursor = x.db()
+        cursor.execute("UPDATE posts SET post_blocked_at = 0 WHERE post_pk = %s", (post_pk,))
+        db.commit()
+
+        toast_ok = render_template("___toast_ok.html", message="Post unblocked")
+        btn_html = f"""
+        <div id=\"block-btn-{post_pk}\"> 
+            <form mix-post=\"{url_for('api_admin_block_post')}\" mix-target=\"#block-btn-{post_pk}\"
+                class=\"px-4 py-1 ma-0 bg-c-black rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center\"
+                style=\"border: 1px solid black;\"> 
+                <input type=\"hidden\" name=\"post_pk\" value=\"{post_pk}\"> 
+                <button type=\"submit\" class=\"text-c-white cursor-pointer\">Block</button>
+            </form>
+        </div>
+        """
+        return f"""
+            <browser mix-bottom="#toast">{toast_ok}</browser>
+            <browser mix-replace="#block-btn-{post_pk}">{btn_html}</browser>
+        """, 200
+    except Exception as ex:
+        ic(ex)
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+        
 
 ##############################
 @app.patch("/like-tweet")
@@ -923,6 +1134,7 @@ def get_data_from_sheet():
         # In the link, find the ID of the sheet. Here: 1aPqzumjNp0BwvKuYPBZwel88UO-OC_c9AEMFVsCw1qU
         # Replace the ID in the 2 places bellow
         url= f"https://docs.google.com/spreadsheets/d/{x.google_spread_sheet_key}/export?format=csv&id={x.google_spread_sheet_key}"
+        # url = f"https://docs.google.com/spreadsheets/d/{x.google_spread_sheet_key}/export?format=csv&gid=0"
         res=requests.get(url=url)
         # ic(res.text) # contains the csv text structure
         csv_text = res.content.decode('utf-8')

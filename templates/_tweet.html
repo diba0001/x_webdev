@@ -1,6 +1,7 @@
-<article class="post" mix-fade-in="5000">
-    <img src="/{{ tweet.user_avatar_path if tweet.user_avatar_path else 'static/images/avatars/unknown.jpg' }}" alt="Profile Picture" 
-    class="w-8 h-8 rounded-full">
+<!-- <article class="post" mix-fade-in="5000"> -->
+<article class="post">
+    <img src="/{{ tweet.user_avatar_path if tweet.user_avatar_path else 'static/images/avatars/unknown.jpg' }}"
+        alt="Profile Picture" class="w-8 h-8 rounded-full">
     <div class="post-content">
         <div class="post-header">
             <span class="name">
@@ -32,6 +33,30 @@
 
             <span class="action"><i class="fa-solid fa-chart-simple"></i> 230</span>
             <span class="action"><i class="fa-solid fa-share"></i></span>
+
+            {% if user.user_is_admin %}
+            <div id="block-btn-{{ tweet.post_pk }}">
+                {% if tweet.post_blocked_at %}
+                <form mix-post="{{ url_for('api_admin_unblock_post') }}" mix-target="#block-btn-{{ tweet.post_pk }}"
+                    class="px-4 py-1 ma-0 bg-c-white rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center"
+                    style="border: 1px solid black;">
+                    <input type="hidden" name="post_pk" value="{{ tweet.post_pk }}">
+                    <button type="submit" class="text-c-black cursor-pointer">
+                        {{ x.lans("admin_unblock") }}
+                    </button>
+                </form>
+                {% else %}
+                <form mix-post="{{ url_for('api_admin_block_post') }}" mix-target="#block-btn-{{ tweet.post_pk }}"
+                    class="px-4 py-1 ma-0 bg-c-black rounded-lg cursor-pointer d-inline-block d-inline-flex a-items-center"
+                    style="border: 1px solid black;">
+                    <input type="hidden" name="post_pk" value="{{ tweet.post_pk }}">
+                    <button type="submit" class="text-c-white cursor-pointer">
+                        {{ x.lans("admin_block") }}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </article>
