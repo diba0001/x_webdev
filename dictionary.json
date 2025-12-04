@@ -232,22 +232,27 @@
     "save_changes": {
         "english": "Save changes",
         "danish": "Gem",
-        "spanish": "Cancelar"
+        "spanish": "Guardar cambios"
     },
     "cancel": {
         "english": "Cancel",
-        "danish": "Tilbage",
-        "spanish": "Guardar cambios"
+        "danish": "Annuller",
+        "spanish": "Cancelar"
     },
     "delete": {
         "english": "Delete",
         "danish": "Slet",
         "spanish": "Eliminar"
     },
-    "deleting_post": {
+    "Eliminando comentario...": {
         "english": "Deleting post",
         "danish": "Sletter post",
         "spanish": "Eliminando el post"
+    },
+    "search_x": {
+        "english": "Search for sports, politics, people...",
+        "danish": "Søg på sport, politik, personer...",
+        "spanish": "Busca por deporte, política, personas…"
     },
     "welcome_to_x": {
         "english": "Welcome to X",
@@ -289,15 +294,15 @@
         "danish": "Opdater",
         "spanish": "Actualizar"
     },
-    "remove_image": {
-        "english": "Remove image",
-        "danish": "Fjern billede",
-        "spanish": "Fjern billede"
+    "remove_media": {
+        "english": "Remove media",
+        "danish": "Fjern fil",
+        "spanish": "Eliminar media"
     },
-    "add_image": {
-        "english": "Add image",
-        "danish": "Tilføj billede",
-        "spanish": "Añadir imagen"
+    "add_media": {
+        "english": "Add media",
+        "danish": "Tilføj fil",
+        "spanish": "Añadir media"
     },
     "new_image_preview": {
         "english": "New image preview",
@@ -344,9 +349,99 @@
         "danish": "Ingen brugere fundet.",
         "spanish": "No se encontraron usuarios."
     },
+    "toast_user_blocked": {
+        "english": "User blocked",
+        "danish": "Brugeren blokeret",
+        "spanish": "Usuario bloqueado"
+    },
+    "toast_user_unblocked": {
+        "english": "User unblocked",
+        "danish": "Brugeren afblokeret",
+        "spanish": "Usuario desbloqueado"
+    },
+    "toast_post_blocked": {
+        "english": "Post blocked",
+        "danish": "Opslag blokeret",
+        "spanish": "Publicación bloqueada"
+    },
+    "toast_post_unblocked": {
+        "english": "Post unblocked",
+        "danish": "Opslag afblokeret",
+        "spanish": "Publicación desbloqueada"
+    },
+    "remove": {
+        "english": "Fjern",
+        "danish": "Remove",
+        "spanish": "Remova"
+    },
     "this_cant_be_undone": {
         "english": "This cannot be reverted.",
         "danish": "Dette kan ikke fortrydes.",
         "spanish": "Esto no se puede deshacer."
+    },
+    "comment": {
+        "english": "Comment",
+        "danish": "Kommentér",
+        "spanish": "Comentario"
+    },
+    "commenting": {
+        "english": "Commenting",
+        "danish": "Kommenterer",
+        "spanish": "Comentando"
+    },
+    "add_a_comment": {
+        "english": "Add a comment?",
+        "danish": "Tilføj en kommentar?",
+        "spanish": "¿Añadir un comentario?"
+    },
+    "edit_comment": {
+        "english": "Edit comment",
+        "danish": "Rediger kommentar",
+        "spanish": "Editar comentario"
+    },
+    "delete_comment": {
+        "english": "Delete comment",
+        "danish": "Slet kommentar",
+        "spanish": "Eliminar comentario"
+    },
+    "save": {
+        "english": "Save",
+        "danish": "Gem",
+        "spanish": "Guardar"
+    },
+    "saving": {
+        "english": "Saving...",
+        "danish": "Gemmer...",
+        "spanish": "Guardando..."
+    },
+    "canceling": {
+        "english": "Canceling...",
+        "danish": "Annullerer...",
+        "spanish": "Cancelando..."
+    },
+    "change_media": {
+        "english": "Change media",
+        "danish": "Ændr fil",
+        "spanish": "Cambiar media"
+    },
+    "editing_comment": {
+        "english": "Editing comment...",
+        "danish": "Redigerer kommentar...",
+        "spanish": "Editando comentario..."
+    },
+    "deleting_comment": {
+        "english": "Deleting comment...",
+        "danish": "Sletter kommentar...",
+        "spanish": "Eliminando comentario"
+    },
+    "no_comment": {
+        "english": "There is no comment on this post yet.",
+        "danish": "Der er ingen kommentarer på dette opslag endnu.",
+        "spanish": "Aún no hay comentarios en esta publicación."
+    },
+    "deleting": {
+        "english": "Deleting...",
+        "danish": "Sletter...",
+        "spanish": "Eliminando..."
     }
 }
