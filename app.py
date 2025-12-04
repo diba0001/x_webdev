@@ -145,6 +145,7 @@ def signup(lan = "english"):
             x.send_email(user_email, "Verify your account", email_verify_account)
 
             return f"""<mixhtml mix-redirect="{ url_for('login') }"></mixhtml>""", 400
+        
         except Exception as ex:
             ic(ex)
             # User errors
@@ -184,7 +185,7 @@ def home():
         # Fetch tweets, total likes, and current user's like status in one query
         q = """
             SELECT 
-                p.post_pk, p.post_message, p.post_image_path, p.post_total_likes, 
+                p.post_pk, p.post_message, p.post_image_path, p.post_total_likes, p.post_total_comments, 
                 u.user_first_name, u.user_last_name, u.user_username, u.user_avatar_path,
                 (SELECT COUNT(*) FROM likes WHERE like_post_fk = p.post_pk AND like_user_fk = %s) AS is_liked_by_user
             FROM posts p
@@ -425,16 +426,180 @@ def api_unlike_tweet():
 
 ##############################
 
-@app.get("/comments")
+@app.route("/comments", methods=["GET", "POST"])
 def comments():
     try:
-        pass
+        # ÅBN COMMENTS (POST fra mix-post)
+        if request.method == "POST":
+            post_pk = request.form.get("post_pk", "")
+            if not post_pk:
+                raise Exception("Missing post ID", 400)
+
+            db, cursor = x.db()
+
+            # 1. Hent alle comments + tilhørende users
+            q_get_all_comments = """
+                SELECT
+                    comments.comment_pk,
+                    comments.comment_post_fk,
+                    comments.comment_user_fk,
+                    comments.comment_text,
+                    comments.comment_created_at,
+                    users.user_pk,
+                    users.user_first_name,
+                    users.user_last_name,
+                    users.user_username,
+                    users.user_avatar_path
+                FROM comments
+                JOIN users ON comments.comment_user_fk = users.user_pk
+                WHERE comments.comment_post_fk = %s
+                ORDER BY comments.comment_created_at ASC
+            """
+            cursor.execute(q_get_all_comments, (post_pk,))
+            comments = cursor.fetchall()
+            
+            # 2. Hent antal kommentarer
+            q_get_count = "SELECT post_total_comments FROM posts WHERE post_pk = %s"
+            cursor.execute(q_get_count, (post_pk,))
+            comments_count = cursor.fetchone()["post_total_comments"]
+            
+            close_comments_button = render_template("___button_close_comments.html", post_pk=post_pk, comments_count=comments_count)
+
+            # Hvis der ER comments
+            user = session.get("user", "")
+
+            comments_template = render_template("_comments_section.html", comments=comments, post_pk=post_pk, user=user)
+
+            return f"""
+                <mixhtml mix-replace="#open_comments_button_container_{post_pk}">
+                    {close_comments_button}
+                </mixhtml>
+
+                <browser mix-after="#post_actions_{post_pk}">
+                    {comments_template}
+                </browser>
+            """
+        
+        # LUK COMMENTS (GET fra mix-get)
+        if request.method == "GET":
+            post_pk = request.args.get("post_pk", "")
+            if not post_pk:
+                raise Exception("Missing post ID", 400)
+            
+            db, cursor = x.db()
+            q_get_count = "SELECT post_total_comments FROM posts WHERE post_pk = %s"
+            cursor.execute(q_get_count, (post_pk,))
+            comments_count = cursor.fetchone()["post_total_comments"]
+
+            open_comments_button = render_template("___button_open_comments.html", post_pk=post_pk, comments_count=comments_count)
+
+            return f"""
+                <mixhtml mix-replace="#close_comments_button_container_{post_pk}">
+                    {open_comments_button}
+                </mixhtml>
+
+                <mixhtml mix-remove="#comments_section_{post_pk}">
+                </mixhtml>
+            """
+
     except Exception as ex:
         ic(ex)
+        return "error"
     finally:
-        pass
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+        
+
+#############################
+
+@app.route("/api-create-comment", methods=["POST"])
+def api_create_comment():
+    try:
+        user = session.get("user", "")
+        if not user:
+            return "invalid user", 401
+        
+        user_pk = user["user_pk"]
+
+        post_pk = request.form.get("post_pk", "")
+        if not post_pk:
+            return "missing post_pk"
+        
+        comment_text = x.validate_comment(request.form.get("comment", ""))
+        comment_pk = uuid.uuid4().hex
+        current_epoch = int(time.time()) 
+
+        db, cursor = x.db()
+
+        # 1. Indsæt kommentaren
+        q = "INSERT INTO comments VALUES(%s, %s, %s, %s, %s)"
+        cursor.execute(q, (comment_pk, post_pk, user_pk, comment_text, current_epoch))
+
+        # 2. Increment post_total_comments
+        q_increment_post = """
+            UPDATE posts 
+            SET post_total_comments = post_total_comments + 1 
+            WHERE post_pk = %s
+        """
+        cursor.execute(q_increment_post, (post_pk,))
+
+        # 3. Hent ny total comment count
+        q_get_count = "SELECT post_total_comments FROM posts WHERE post_pk = %s"
+        cursor.execute(q_get_count, (post_pk,))
+        new_count = cursor.fetchone()["post_total_comments"]
+
+        db.commit()
+
+        # Byg en comment, der ligner JOIN-rowen
+        comment = {
+            "comment_pk": comment_pk,
+            "comment_post_fk": post_pk,
+            "comment_user_fk": user_pk,
+            "comment_text": comment_text,
+            "user_pk": user["user_pk"],
+            "user_first_name": user["user_first_name"],
+            "user_last_name": user["user_last_name"],
+            "user_username": user["user_username"],
+            "user_avatar_path": user["user_avatar_path"],
+        }
+
+        html_comment_container = render_template("___comment_container.html", post_pk=post_pk)
+
+        html_comment = render_template("___comment.html", comment=comment, post_pk=post_pk, user=user)
+
+        html_close_comment = render_template("___button_close_comments.html", comments_count=new_count, post_pk=post_pk)
+
+        return f"""
+            <browser mix-remove="#no_comment_{post_pk}"></browser>
+
+            <browser mix-top="#comments_section_{post_pk}">
+                {html_comment}
+            </browser>
+
+            <browser mix-replace="#comment_container_{post_pk}">
+                {html_comment_container}
+            </browser>
+
+            <browser mix-replace="#close_comments_button_container_{post_pk}">
+                {html_close_comment}
+            </browser>
+        """
+        
+    except Exception as ex:
+        ic(ex)
+        
+        if "x-error comment" in str(ex):
+            toast_error = render_template("___toast_error.html", message=f"{x.lans('comment')} - {x.COMMENT_MIN_LEN} {x.lans('to')} {x.COMMENT_MAX_LEN} {x.lans('characters')}")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>"""
+
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
 
 ##############################
+
 @app.route("/api-create-post", methods=["POST"])
 def api_create_post():
     try:
@@ -445,8 +610,8 @@ def api_create_post():
         post_pk = uuid.uuid4().hex
         post_image_path = ""
         db, cursor = x.db()
-        q = "INSERT INTO posts VALUES(%s, %s, %s, %s, %s)"
-        cursor.execute(q, (post_pk, user_pk, post, 0, post_image_path))
+        q = "INSERT INTO posts VALUES(%s, %s, %s, %s, %s, %s)"
+        cursor.execute(q, (post_pk, user_pk, post, 0, 0, post_image_path))
         db.commit()
         toast_ok = render_template("___toast_ok.html", message="The world is reading your post !")
         tweet = {
@@ -455,6 +620,7 @@ def api_create_post():
             "user_username": user["user_username"],
             "user_avatar_path": user["user_avatar_path"],
             "post_message": post,
+            "post_pk": post_pk
         }
         html_post_container = render_template("___post_container.html")
         html_post = render_template("_tweet.html", tweet=tweet)
@@ -478,7 +644,248 @@ def api_create_post():
 
     finally:
         if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()   
+        if "db" in locals(): db.close()  
+
+
+##############################
+@app.route("/api-delete-comment", methods=["GET"])
+def api_delete_comment():
+    try:
+        user = session.get("user", "")
+        if not user:
+            return "invalid user", 401
+        
+        user_pk = user["user_pk"]
+
+        comment_pk = request.args.get("comment_pk")
+        if not comment_pk:
+                    return "missing comment_pk", 400
+        
+        post_pk = request.args.get("post_pk")
+        if not post_pk:
+                return "missing post_pk", 400
+
+        db, cursor = x.db()
+
+        # 1. Slet kommentaren, kun hvis den tilhører brugeren og det rigtige post
+        q = """
+        DELETE FROM comments 
+        WHERE comment_pk = %s 
+          AND comment_post_fk = %s 
+          AND comment_user_fk = %s
+        """
+        cursor.execute(q, (comment_pk, post_pk, user_pk))
+        ic("deleted rows:", cursor.rowcount)
+
+        if cursor.rowcount == 0:
+            db.rollback()
+            return "not allowed", 403
+
+        # 2. Decrement comment count
+        q_increment_post = """
+        UPDATE posts 
+        SET post_total_comments = post_total_comments - 1 
+        WHERE post_pk = %s
+        """
+        cursor.execute(q_increment_post, (post_pk,))
+
+        # 3. Hent ny total comment count
+        q_get_count = "SELECT post_total_comments FROM posts WHERE post_pk = %s"
+        cursor.execute(q_get_count, (post_pk,))
+        new_count = cursor.fetchone()["post_total_comments"]
+        
+        db.commit()
+
+        html_close_comment = render_template(
+            "___button_close_comments.html",
+            comments_count=new_count,
+            post_pk=post_pk
+        )
+
+        # Hvis der stadig er kommentarer tilbage
+        if new_count > 0:
+            return f"""
+                <browser mix-remove="#comment_{comment_pk}"></browser>
+                <browser mix-replace="#close_comments_button_container_{post_pk}">
+                    {html_close_comment}
+                </browser>  
+            """
+
+        # Hvis der IKKE er flere kommentarer (new_count == 0)
+        no_comment_html = f"""
+            <p id="no_comment_{post_pk}" class="text-a-center">
+                There is no comment on this post yet.
+            </p>
+        """
+
+        return f"""
+            <browser mix-remove="#comment_{comment_pk}"></browser>
+
+            <browser mix-top="#comments_section_{post_pk}">
+                {no_comment_html}
+            </browser>
+
+            <browser mix-replace="#close_comments_button_container_{post_pk}">
+                {html_close_comment}
+            </browser>  
+        """
+
+    except Exception as ex:
+        ic(ex)
+        if "db" in locals(): db.rollback()
+        return "error", 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+##############################
+@app.route("/api-edit-comment", methods=["GET"])
+def api_edit_comment():
+    try:
+        user = session.get("user", "")
+        if not user:
+            return "invalid user", 401
+
+        comment_pk = request.args.get("comment_pk")
+        if not comment_pk:
+            return "missing comment_pk", 400
+    
+        post_pk = request.args.get("post_pk")
+        if not post_pk:
+            return "missing post_pk", 400
+
+        db, cursor = x.db()
+
+        # Hent comment for at vise i form
+        q = """
+        SELECT comment_text, comment_user_fk 
+        FROM comments 
+        WHERE comment_pk = %s
+        """
+        cursor.execute(q, (comment_pk,))
+        row = cursor.fetchone()
+
+        comment_text = row["comment_text"]
+
+        html_comment_edit_form = render_template("___comment_edit_form.html", comment_pk=comment_pk, post_pk=post_pk, comment_text=comment_text)
+
+        return f"""
+
+        <browser mix-replace="#comment_text{ comment_pk }">{html_comment_edit_form}</browser>
+
+        """
+
+    except Exception as ex:
+        ic(ex)
+
+        return "error", 500
+    
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+##############################
+@app.route("/api-update-comment", methods=["POST"])
+def api_update_comment():
+    try:
+        user = session.get("user")
+        if not user:
+            return "invalid user", 401
+
+        comment_pk = request.form.get("comment_pk")
+        if not comment_pk:
+            return "missing comment_pk", 400
+
+        post_pk = request.form.get("post_pk")
+        if not post_pk:
+            return "missing post_pk", 400
+
+        new_text = x.validate_comment(request.form.get("comment_text", ""))
+        if not new_text:
+            return "missing comment_text", 400
+
+        db, cursor = x.db()
+
+        # Opdater kun hvis bruger ejer kommentaren
+        q = """
+        UPDATE comments 
+        SET comment_text = %s 
+        WHERE comment_pk = %s AND comment_user_fk = %s
+        """
+        cursor.execute(q, (new_text, comment_pk, user["user_pk"]))
+        db.commit()
+
+        # Lav et opdateret comment-objekt, så vi kan re-render comment HTML
+        comment = {
+            "comment_pk": comment_pk,
+            "comment_text": new_text,
+            "user_pk": user["user_pk"],
+            "user_first_name": user["user_first_name"],
+            "user_last_name": user["user_last_name"],
+            "user_username": user["user_username"],
+            "user_avatar_path": user["user_avatar_path"]
+        }
+
+        html_comment = render_template("___comment.html", comment=comment, post_pk=post_pk, user=user)
+
+        return f"""
+            <browser mix-replace="#comment_{comment_pk}">
+                {html_comment}
+            </browser>
+        """
+
+    except Exception as ex:
+        ic(ex)
+        
+        if "x-error comment" in str(ex):
+            toast_error = render_template("___toast_error.html", message=f"{x.lans('comment')} - {x.COMMENT_MIN_LEN} {x.lans('to')} {x.COMMENT_MAX_LEN} {x.lans('characters')}")
+            return f"""<browser mix-bottom="#toast">{toast_error}</browser>"""
+
+        return "error", 500
+    
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+##############################
+@app.route("/api-cancel-edit-comment", methods=["GET"])
+def api_cancel_edit_comment():
+
+    comment_pk = request.args.get("comment_pk")
+    if not comment_pk:
+            return "missing comment_pk", 400
+    
+    post_pk = request.args.get("post_pk")
+    if not post_pk:
+            return "missing post_pk", 400
+
+    db, cursor = x.db()
+    q = """
+    SELECT comments.*, users.* 
+    FROM comments
+    JOIN users ON comments.comment_user_fk = users.user_pk
+    WHERE comment_pk = %s
+    """
+    cursor.execute(q, (comment_pk,))
+    row = cursor.fetchone()
+    db.close()
+
+    html_comment = render_template(
+        "___comment.html",
+        comment=row,
+        post_pk=post_pk,
+        user=session["user"]
+    )
+
+    return f"""
+        <browser mix-replace="#comment_{comment_pk}">
+            {html_comment}
+        </browser>
+    """
+
 
 ##############################
 @app.route("/api-update-post", methods=["POST"])

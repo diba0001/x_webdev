@@ -1,0 +1,11 @@
+<form id="comment_container_{{ post_pk }}" action="{{ url_for('api_create_comment') }}" mix-post
+    class="d-flex flex-col w-full ml-2">
+    <input type="hidden" name="post_pk" value="{{ post_pk }}">
+
+    <textarea name="comment" placeholder="{{ x.lans('add_a_comment') }}"
+        class="w-full outline-1 outline-s-solid outline-c-gray:+50 pa-2"></textarea>
+    <button mix-default="{{ x.lans('comment') }}" mix-await="{{ x.lans('commenting') }}"
+        class="w-auto ml-auto mt-2 bg-c-black text-c-white py-2 px-12 rounded-xl" style="pointer-events: none;">
+        {{ x.lans('comment') }}
+    </button>
+</form>

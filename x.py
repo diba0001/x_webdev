@@ -132,6 +132,15 @@ def validate_post(post = ""):
     if not re.match(REGEX_POST, post): raise Exception("x-error post", 400)
     return post
 
+##############################
+COMMENT_MIN_LEN = 1
+COMMENT_MAX_LEN = 280
+REGEX_COMMENT = f"^.{{{COMMENT_MIN_LEN},{COMMENT_MAX_LEN}}}$"
+def validate_comment(comment = ""):
+    comment = comment.strip()
+    if not re.match(REGEX_COMMENT, comment): raise Exception("x-error comment", 400)
+    return comment
+
 
 ##############################
 def send_email(to_email, subject, template):
