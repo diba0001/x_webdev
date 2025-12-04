@@ -455,17 +455,13 @@ def api_like_tweet():
 
         db, cursor = x.db()
 
-        # 1. Insert a new like record with the composite key and timestamp
+        # Insert a new like record with the composite key and timestamp
         q_insert_like = "INSERT INTO likes (like_user_fk, like_post_fk, like_timestamp) VALUES(%s, %s, %s)"
         cursor.execute(q_insert_like, (user_pk, post_pk, current_epoch))
-
-        # 2. Increment the post's like count
-        q_increment_post = "UPDATE posts SET post_total_likes = post_total_likes + 1 WHERE post_pk = %s"
-        cursor.execute(q_increment_post, (post_pk,))
         
         db.commit()
         
-        # 3. Get the new total like count to display
+        # Get the new total like count to display
         q_get_count = "SELECT post_total_likes FROM posts WHERE post_pk = %s"
         cursor.execute(q_get_count, (post_pk,))
         new_count = cursor.fetchone()["post_total_likes"]
@@ -520,21 +516,15 @@ def api_unlike_tweet():
 
         db, cursor = x.db()
 
-        # 1. Delete the like record
+        # Delete the like record
         q_delete_like = "DELETE FROM likes WHERE like_user_fk = %s AND like_post_fk = %s"
         cursor.execute(q_delete_like, (user_pk, post_pk))
-        
-        new_count = 0
-        if cursor.rowcount > 0:
-            # 2. Decrement the post's like count (using post_total_likes from x.sql)
-            q_decrement_post = "UPDATE posts SET post_total_likes = post_total_likes - 1 WHERE post_pk = %s AND post_total_likes > 0"
-            cursor.execute(q_decrement_post, (post_pk,))
-            db.commit()
-            
-            # 3. Get the new total like count to display
-            q_get_count = "SELECT post_total_likes FROM posts WHERE post_pk = %s"
-            cursor.execute(q_get_count, (post_pk,))
-            new_count = cursor.fetchone()["post_total_likes"]
+        db.commit()
+
+       # Get the new total like count to display
+        q_get_count = "SELECT post_total_likes FROM posts WHERE post_pk = %s"
+        cursor.execute(q_get_count, (post_pk,))
+        new_count = cursor.fetchone()["post_total_likes"]
 
         # Response to the browser: replace button and update count
         button_like_tweet = render_template("___button_like_tweet.html", post_pk=post_pk, like_count=new_count)
