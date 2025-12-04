@@ -12,11 +12,14 @@ body {
 }
 button {
   border: none;
+button {
+  border: none;
   background-color: transparent;
 }
 a {
   text-decoration: none;
 }
+p {
 p {
   line-height: 1.4rem;
 }
@@ -45,6 +48,20 @@ p {
       display: none;
       pointer-events: none;
     }
+      display: none;
+      pointer-events: none;
+    }
+  }
+  .burger.open i.fa-bars {
+    display: none;
+    pointer-events: none;
+  }
+  .burger.open i.fa-xmark {
+    display: block;
+    margin-left: 13rem;
+    width: 32px;
+    transform: translateX(0);
+    transition: transform 0.3s ease-in-out;
   }
   .burger.open i.fa-bars {
     display: none;
@@ -76,6 +93,7 @@ p {
   }
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
 
     main {
       grid-column: 1 / -1;
@@ -94,12 +112,15 @@ p {
 
     nav {
       width: 70%;
+      width: 70%;
       max-width: 260px;
       height: 100vh;
       background: #fff;
       transform: translateX(-100%);
     }
     nav.active {
+      transform: translateX(0);
+    }
       transform: translateX(0);
     }
   }
@@ -111,9 +132,16 @@ p {
 
     aside {
       display: none;
+      display: none;
     }
   }
 
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0rem;
+    padding: 0;
   ul {
     list-style: none;
     display: flex;
@@ -132,7 +160,24 @@ p {
         padding: 0.5rem 0.8rem;
         border-radius: 2rem;
         transition: background-color 0.2s;
+    li {
+      a {
+        color: rgb(15, 15, 15);
+        font-size: 1rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 2rem;
+        transition: background-color 0.2s;
 
+        &:hover {
+          background-color: rgb(200, 200, 200);
+        }
+      }
+    }
+  }
         &:hover {
           background-color: rgb(200, 200, 200);
         }
@@ -153,7 +198,26 @@ p {
     transition: 0.2s;
     width: 90%;
     align-self: center;
+  .post-btn {
+    margin: 0.5rem 0;
+    padding: 0.7rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 2rem;
+    background-color: rgb(15, 15, 15);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+    width: 90%;
+    align-self: center;
 
+    &:hover {
+      background-color: rgb(240, 240, 240);
+      color: rgb(15, 15, 15);
+      border: 1px solid rgb(200, 200, 200);
+    }
+  }
     &:hover {
       background-color: rgb(240, 240, 240);
       color: rgb(15, 15, 15);
@@ -170,11 +234,29 @@ p {
     transition: background-color 0.2s;
     cursor: pointer;
     margin-bottom: 0.5rem;
+  #profile_tag {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.6rem;
+    border-radius: 2rem;
+    transition: background-color 0.2s;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
 
     &:hover {
       background-color: rgb(240, 240, 240);
     }
+    &:hover {
+      background-color: rgb(240, 240, 240);
+    }
 
+    img {
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      margin-right: 0.6rem;
+    }
     img {
       border-radius: 50%;
       width: 36px;
@@ -186,6 +268,10 @@ p {
       font-weight: bold;
       font-size: 0.85rem;
     }
+    .name {
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
 
     .handle {
       font-size: 0.75rem;
@@ -193,7 +279,17 @@ p {
     }
   }
 }
+    .handle {
+      font-size: 0.75rem;
+      color: rgb(110, 109, 109);
+    }
+  }
+}
 
+main {
+  grid-column: 2 / 3;
+  border-right: 1px solid rgb(230, 230, 230);
+  border-left: 1px solid rgb(230, 230, 230);
 main {
   grid-column: 2 / 3;
   border-right: 1px solid rgb(230, 230, 230);
@@ -206,7 +302,17 @@ main {
     border-bottom: 1px solid rgb(230, 230, 230);
     cursor: pointer;
     transition: background-color 0.2s;
+  .post {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgb(230, 230, 230);
+    cursor: pointer;
+    transition: background-color 0.2s;
 
+    &:hover {
+      background-color: rgb(247, 249, 249);
+    }
     &:hover {
       background-color: rgb(247, 249, 249);
     }
@@ -216,14 +322,28 @@ main {
       width: 48px;
       height: 48px;
     }
+    .avatar {
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+    }
 
+    .post-content {
+      flex: 1;
     .post-content {
       flex: 1;
 
       .post-header {
         font-size: 0.9rem;
         margin-bottom: 0.3rem;
+      .post-header {
+        font-size: 0.9rem;
+        margin-bottom: 0.3rem;
 
+        .name {
+          font-weight: bold;
+          margin-right: 0.3rem;
+        }
         .name {
           font-weight: bold;
           margin-right: 0.3rem;
@@ -235,7 +355,17 @@ main {
           font-size: 0.85rem;
         }
       }
+        .handle,
+        .time {
+          color: rgb(110, 109, 109);
+          font-size: 0.85rem;
+        }
+      }
 
+      .text {
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
       .text {
         font-size: 0.95rem;
         line-height: 1.4;
@@ -247,7 +377,20 @@ main {
         max-width: 100%;
         border: 1px solid rgb(230, 230, 230);
       }
+      .post-image {
+        margin-top: 0.6rem;
+        border-radius: 1rem;
+        max-width: 100%;
+        border: 1px solid rgb(230, 230, 230);
+      }
 
+      .post-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.6rem;
+        max-width: 450px;
+        color: rgb(110, 109, 109);
+        font-size: 0.9rem;
       .post-actions {
         display: flex;
         justify-content: space-between;
@@ -264,10 +407,23 @@ main {
           padding: 0.3rem;
           border-radius: 50%;
           transition: background-color 0.2s, color 0.2s;
+        .action {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          cursor: pointer;
+          padding: 0.3rem;
+          border-radius: 50%;
+          transition: background-color 0.2s, color 0.2s;
 
           &:hover {
             background-color: rgba(29, 155, 240, 0.1);
             color: rgb(29, 155, 240);
+          }
+        }
+        span.action {
+          &:hover {
+            background-color: transparent;
           }
         }
       }
@@ -278,8 +434,16 @@ main {
 aside {
   grid-column: 3 / 4;
   margin: 1rem 2rem 1rem 1rem;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
 
+  form {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgb(230, 230, 230);
+    border-radius: 2rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
   form {
     display: flex;
     align-items: center;
@@ -296,12 +460,30 @@ aside {
       font-size: 0.9rem;
     }
   }
+    input {
+      border: none;
+      background: transparent;
+      flex: 1;
+      outline: none;
+      font-size: 0.9rem;
+    }
+  }
 
   hr {
     border: 0.5px solid rgb(230, 230, 230);
     margin: 1.5rem 0;
   }
+  hr {
+    border: 0.5px solid rgb(230, 230, 230);
+    margin: 1.5rem 0;
+  }
 
+  .happening-now,
+  .who-to-follow {
+    border: 1px solid rgb(230, 230, 230);
+    border-radius: 1rem;
+    margin: 1rem 0;
+    overflow: hidden;
   .happening-now,
   .who-to-follow {
     border: 1px solid rgb(230, 230, 230);
@@ -315,7 +497,18 @@ aside {
       padding: 1rem;
     }
   }
+    h2 {
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 1rem;
+    }
+  }
 
+  .trending-item {
+    padding: 0.8rem 1rem;
+    display: flex;
+    cursor: pointer;
+    transition: background-color 0.2s;
   .trending-item {
     padding: 0.8rem 1rem;
     display: flex;
@@ -325,11 +518,21 @@ aside {
     &:hover {
       background-color: rgb(247, 249, 249);
     }
+    &:hover {
+      background-color: rgb(247, 249, 249);
+    }
 
     .trending-info {
       display: flex;
       flex-direction: column;
+    .trending-info {
+      display: flex;
+      flex-direction: column;
 
+      .item_title {
+        font-size: 0.8rem;
+        color: rgb(110, 109, 109);
+      }
       .item_title {
         font-size: 0.8rem;
         color: rgb(110, 109, 109);
@@ -341,7 +544,19 @@ aside {
         margin-top: 0.2rem;
       }
     }
+      p {
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-top: 0.2rem;
+      }
+    }
 
+    .option {
+      margin-left: auto;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+  }
     .option {
       margin-left: auto;
       font-size: 1.3rem;
@@ -356,7 +571,17 @@ aside {
       padding: 0.2rem 1rem;
       cursor: pointer;
       transition: background-color 0.2s;
+  .follow-suggestion {
+    .profile-info {
+      display: flex;
+      align-items: center;
+      padding: 0.2rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
 
+      &:hover {
+        background-color: rgb(200, 200, 200);
+      }
       &:hover {
         background-color: rgb(200, 200, 200);
       }
@@ -367,11 +592,24 @@ aside {
         height: 2.5rem;
         margin-right: 1rem;
       }
+      img {
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-right: 1rem;
+      }
 
       .info-copy {
         display: flex;
         flex-direction: column;
+      .info-copy {
+        display: flex;
+        flex-direction: column;
 
+        .name {
+          font-weight: bold;
+          font-size: 0.9rem;
+        }
         .name {
           font-weight: bold;
           font-size: 0.9rem;
@@ -382,7 +620,22 @@ aside {
           color: rgb(110, 109, 109);
         }
       }
+        .handle {
+          font-size: 0.8rem;
+          color: rgb(110, 109, 109);
+        }
+      }
 
+      .follow-btn {
+        border: none;
+        background-color: rgb(15, 20, 25);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 2rem;
+        margin-left: auto;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: bold;
       .follow-btn {
         border: none;
         background-color: rgb(15, 20, 25);
@@ -400,7 +653,22 @@ aside {
       }
     }
   }
+        &:hover {
+          background-color: rgb(39, 44, 48);
+        }
+      }
+    }
+  }
 
+  .show-more-btn {
+    border: none;
+    background-color: transparent;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    color: rgb(29, 155, 240);
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
   .show-more-btn {
     border: none;
     background-color: transparent;
@@ -416,6 +684,11 @@ aside {
     }
   }
 }
+    &:hover {
+      background-color: rgb(247, 249, 249);
+    }
+  }
+}
 
 /* LANDING PAGE */
 
@@ -426,7 +699,8 @@ aside {
   align-items: center;
   min-height: 100vh;
   background: #fff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   margin: 0;
 }
 
@@ -522,6 +796,7 @@ aside {
   }
 
   .x-landing__left {
+  .x-landing__left {
     display: none;
   }
 
@@ -549,6 +824,7 @@ aside {
 .x-dialog__overlay {
   position: absolute;
   inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   background: rgba(0, 0, 0, 0.5);
 }
 
@@ -1151,4 +1427,20 @@ aside {
 
 .btn-reply:hover {
   background-color: rgb(26, 140, 216);
+}
+
+
+/* Admin button styling */
+.admin-nav-btn {
+  border: 1px solid black;
+  cursor: pointer;
+  background-color: white;
+  color: black;
+  padding: 0.25rem 1rem;
+  border-radius: 100px
+}
+
+.admin-nav-btn.active {
+  background-color: black;
+  color: white;
 }

@@ -169,6 +169,16 @@
         "danish": "Du følger ikke nogen på nuværende tidspunkt.",
         "spanish": "No estás siguiendo a nadie en este momento."
     },
+    "following": {
+        "english": "Following",
+        "danish": "Personer du følger",
+        "spanish": "Personas que sigues"
+    },
+    "no_following": {
+        "english": "You are not following anyone at the moment.",
+        "danish": "Du følger ikke nogen på nuværende tidspunkt.",
+        "spanish": "No estás siguiendo a nadie en este momento."
+    },
     "post": {
         "english": "Post",
         "danish": "Del",
@@ -188,6 +198,11 @@
         "english": "Follow",
         "danish": "Følg",
         "spanish": "Seguir"
+    },
+    "unfollow": {
+        "english": "Unfollow",
+        "danish": "Fjern følg",
+        "spanish": "Dejar de seguir"
     },
     "unfollow": {
         "english": "Unfollow",
